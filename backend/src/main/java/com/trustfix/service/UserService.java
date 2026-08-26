@@ -5,6 +5,7 @@ import com.trustfix.entity.UserRole;
 import com.trustfix.exception.ResourceAlreadyExistsException;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User createUser(User user) {
@@ -27,6 +30,9 @@ public class UserService {
         }
         if (user.getPhone() != null && !user.getPhone().isBlank() && userRepository.existsByPhone(user.getPhone())) {
             throw new ResourceAlreadyExistsException("User with phone number '" + user.getPhone() + "' already exists");
+        }
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         return userRepository.save(user);
     }
@@ -66,6 +72,15 @@ public class UserService {
         if (updatedDetails.getName() != null && !updatedDetails.getName().isBlank()) {
             existingUser.setName(updatedDetails.getName());
         }
+        if (updatedDetails.getPassword() != null && !updatedDetails.getPassword().isBlank()) {
+            if (!updatedDetails.getPassword().equals(existingUser.getPassword())) {
+                if (!isBCryptHashed(updatedDetails.getPassword())) {
+                    existingUser.setPassword(passwordEncoder.encode(updatedDetails.getPassword()));
+                } else {
+                    existingUser.setPassword(updatedDetails.getPassword());
+                }
+            }
+        }
         if (updatedDetails.getPhone() != null && !updatedDetails.getPhone().equals(existingUser.getPhone())) {
             if (userRepository.existsByPhone(updatedDetails.getPhone())) {
                 throw new ResourceAlreadyExistsException("Phone number '" + updatedDetails.getPhone() + "' is already registered to another user");
@@ -81,4 +96,12 @@ public class UserService {
         User user = getUserById(id);
         userRepository.delete(user);
     }
+
+    private boolean isBCryptHashed(String password) {
+        if (password == null) {
+            return false;
+        }
+        return (password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$")) && password.length() == 60;
+    }
 }
+
