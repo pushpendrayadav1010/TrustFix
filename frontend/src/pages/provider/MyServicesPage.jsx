@@ -1,0 +1,196 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { providerService } from '../../services/providerService';
+import { categoryService } from '../../services/categoryService';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { formatCurrency } from '../../utils/formatters';
+
+export const MyServicesPage = () => {
+  const { providerProfile } = useAuth();
+  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Add Service Modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    item: '',
+    price: '',
+    type: 'Base Visit',
+    description: ''
+  });
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const [provServices, cats] = await Promise.all([
+        providerService.getProviderServices(providerProfile?.id || 101),
+        categoryService.getCategories()
+      ]);
+      setServices(provServices || []);
+      setCategories(cats);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, [providerProfile]);
+
+  const handleOpenAdd = () => {
+    setFormData({
+      item: '',
+      price: '',
+      type: 'Base Visit',
+      description: ''
+    });
+    setModalOpen(true);
+  };
+
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    if (!formData.item || !formData.price) return;
+
+    await providerService.addProviderService(providerProfile?.id || 101, {
+      item: formData.item,
+      price: Number(formData.price),
+      type: formData.type
+    });
+    setModalOpen(false);
+    fetchServices();
+  };
+
+  const handleDeleteService = async (item) => {
+    if (window.confirm(`Are you sure you want to remove "${item}" from your services?`)) {
+      await providerService.deleteProviderService(providerProfile?.id || 101, item);
+      fetchServices();
+    }
+  };
+
+  return (
+    <div className="my-services-page">
+      <DashboardHeader
+        title="My Trade Services & Catalog"
+        subtitle="Configure the specific jobs and installation tasks you offer to TrustFix customers."
+        actions={
+          <Button variant="primary" size="sm" onClick={handleOpenAdd}>
+            + Add New Service
+          </Button>
+        }
+      />
+
+      <div className="dashboard-content">
+        {loading ? (
+          <LoadingSpinner message="Loading your service catalog..." />
+        ) : services.length === 0 ? (
+          <EmptyState
+            icon="📋"
+            title="No services configured"
+            description="Add the tasks and repairs you specialize in to start receiving customer requests."
+            action={<Button variant="primary" onClick={handleOpenAdd}>+ Add First Service</Button>}
+          />
+        ) : (
+          <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            {services.map((serv, idx) => (
+              <div key={idx} className="card card-hoverable flex flex-col justify-between">
+                <div className="card-body">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="badge badge-confirmed">{serv.type}</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                      {formatCurrency(serv.price)}
+                    </span>
+                  </div>
+
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>
+                    {serv.item}
+                  </h4>
+
+                  <p className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
+                    Standard labor charge includes arrival, diagnostics, and standard tools.
+                  </p>
+                </div>
+
+                <div className="card-footer flex items-center justify-between">
+                  <span className="text-xs text-muted">Status: <strong style={{ color: 'var(--success-700)' }}>Active</strong></span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    style={{ color: 'var(--danger-600)' }}
+                    onClick={() => handleDeleteService(serv.item)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add Service Modal */}
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title="Add New Specialized Service"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+              <Button variant="primary" onClick={handleAddService}>Add To Catalog</Button>
+            </>
+          }
+        >
+          <form onSubmit={handleAddService}>
+            <Input
+              label="Service Task Name"
+              placeholder="e.g. Ceiling Fan Installation, Inverter Repair"
+              value={formData.item}
+              onChange={(e) => setFormData(prev => ({ ...prev, item: e.target.value }))}
+              required
+            />
+
+            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="Starting Price (₹)"
+                type="number"
+                placeholder="299"
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                required
+              />
+
+              <div className="form-group">
+                <label className="form-label">Pricing Type</label>
+                <select
+                  className="form-control"
+                  value={formData.type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                >
+                  <option value="Base Visit">Base Visit</option>
+                  <option value="Per Unit">Per Unit</option>
+                  <option value="Fixed">Fixed Package</option>
+                  <option value="Per Hour">Per Hour</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group mb-0">
+              <label className="form-label">Task Details / Inclusions</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="What is included in this standard charge..."
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+          </form>
+        </Modal>
+
+      </div>
+    </div>
+  );
+};
