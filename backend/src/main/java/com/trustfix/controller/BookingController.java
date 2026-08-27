@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.booking.BookingRequest;
+import com.trustfix.dto.booking.BookingResponse;
+import com.trustfix.dto.mapper.BookingMapper;
 import com.trustfix.entity.Booking;
 import com.trustfix.entity.BookingStatus;
 import com.trustfix.service.BookingService;
@@ -22,74 +25,88 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingMapper bookingMapper;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService, BookingMapper bookingMapper) {
         this.bookingService = bookingService;
+        this.bookingMapper = bookingMapper;
     }
 
     @PostMapping
-    public ResponseEntity<Booking> createBooking(
+    public ResponseEntity<BookingResponse> createBooking(
             @RequestParam Long customerId,
             @RequestParam Long serviceId,
             @RequestParam Long addressId,
             @RequestParam(required = false) Long providerId,
-            @Valid @RequestBody(required = false) Booking booking) {
-        Booking bookingToCreate = booking != null ? booking : new Booking();
+            @Valid @RequestBody(required = false) BookingRequest request) {
+        Booking bookingToCreate = bookingMapper.toEntity(request);
+        if (bookingToCreate == null) {
+            bookingToCreate = new Booking();
+        }
         Booking createdBooking = bookingService.createBooking(customerId, serviceId, addressId, providerId, bookingToCreate);
-        return new ResponseEntity<>(createdBooking, HttpStatus.CREATED);
+        return new ResponseEntity<>(bookingMapper.toResponse(createdBooking), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Booking> getBookingById(@PathVariable Long id) {
+    public ResponseEntity<BookingResponse> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
-        return ResponseEntity.ok(booking);
+        return ResponseEntity.ok(bookingMapper.toResponse(booking));
     }
 
     @GetMapping("/reference/{bookingReference}")
-    public ResponseEntity<Booking> getBookingByReference(@PathVariable String bookingReference) {
+    public ResponseEntity<BookingResponse> getBookingByReference(@PathVariable String bookingReference) {
         Booking booking = bookingService.getBookingByReference(bookingReference);
-        return ResponseEntity.ok(booking);
+        return ResponseEntity.ok(bookingMapper.toResponse(booking));
     }
 
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<Booking>> getBookingsByCustomer(@PathVariable Long customerId) {
-        List<Booking> bookings = bookingService.getBookingsByCustomer(customerId);
+    public ResponseEntity<List<BookingResponse>> getBookingsByCustomer(@PathVariable Long customerId) {
+        List<BookingResponse> bookings = bookingService.getBookingsByCustomer(customerId)
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(bookings);
     }
 
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<List<Booking>> getBookingsByProvider(@PathVariable Long providerId) {
-        List<Booking> bookings = bookingService.getBookingsByProvider(providerId);
+    public ResponseEntity<List<BookingResponse>> getBookingsByProvider(@PathVariable Long providerId) {
+        List<BookingResponse> bookings = bookingService.getBookingsByProvider(providerId)
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(bookings);
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Booking>> getBookingsByStatus(@PathVariable BookingStatus status) {
-        List<Booking> bookings = bookingService.getBookingsByStatus(status);
+    public ResponseEntity<List<BookingResponse>> getBookingsByStatus(@PathVariable BookingStatus status) {
+        List<BookingResponse> bookings = bookingService.getBookingsByStatus(status)
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(bookings);
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<Booking> updateBookingStatus(
+    public ResponseEntity<BookingResponse> updateBookingStatus(
             @PathVariable Long id,
             @RequestParam BookingStatus status) {
         Booking updatedBooking = bookingService.updateBookingStatus(id, status);
-        return ResponseEntity.ok(updatedBooking);
+        return ResponseEntity.ok(bookingMapper.toResponse(updatedBooking));
     }
 
     @PutMapping("/{id}/assign-provider")
-    public ResponseEntity<Booking> assignProvider(
+    public ResponseEntity<BookingResponse> assignProvider(
             @PathVariable Long id,
             @RequestParam Long providerId) {
         Booking updatedBooking = bookingService.assignProvider(id, providerId);
-        return ResponseEntity.ok(updatedBooking);
+        return ResponseEntity.ok(bookingMapper.toResponse(updatedBooking));
     }
 
     @PutMapping("/{id}/provider/{providerId}")
-    public ResponseEntity<Booking> assignProviderByPath(
+    public ResponseEntity<BookingResponse> assignProviderByPath(
             @PathVariable Long id,
             @PathVariable Long providerId) {
         Booking updatedBooking = bookingService.assignProvider(id, providerId);
-        return ResponseEntity.ok(updatedBooking);
+        return ResponseEntity.ok(bookingMapper.toResponse(updatedBooking));
     }
 }

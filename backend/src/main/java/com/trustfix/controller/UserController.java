@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.mapper.UserMapper;
+import com.trustfix.dto.user.UserRequest;
+import com.trustfix.dto.user.UserResponse;
 import com.trustfix.entity.User;
 import com.trustfix.entity.UserRole;
 import com.trustfix.exception.ResourceNotFoundException;
@@ -23,40 +26,47 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserMapper userMapper) {
         this.userService = userService;
+        this.userMapper = userMapper;
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
+        User user = userMapper.toEntity(request);
         User createdUser = userService.createUser(user);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+        return new ResponseEntity<>(userMapper.toResponse(createdUser), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
         User user = userService.findUserByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
     @GetMapping("/role/{role}")
-    public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
-        List<User> users = userService.getUsersByRole(role);
+    public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable UserRole role) {
+        List<UserResponse> users = userService.getUsersByRole(role)
+                .stream()
+                .map(userMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(users);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UserRequest request) {
+        User userDetails = userMapper.toEntity(request);
         User updatedUser = userService.updateUser(id, userDetails);
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(userMapper.toResponse(updatedUser));
     }
 
     @DeleteMapping("/{id}")

@@ -5,6 +5,11 @@ import com.trustfix.entity.User;
 import com.trustfix.entity.UserRole;
 import com.trustfix.exception.ResourceAlreadyExistsException;
 import com.trustfix.exception.ResourceNotFoundException;
+import com.trustfix.repository.UserRepository;
+import com.trustfix.security.JwtService;
+import com.trustfix.dto.mapper.UserMapper;
+import com.trustfix.repository.UserRepository;
+import com.trustfix.security.JwtService;
 import com.trustfix.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -40,6 +46,17 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @SpyBean
+    private UserMapper userMapper;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private UserRepository userRepository;
+
+
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -55,9 +72,19 @@ class UserControllerTest {
     void createUser_Success_Returns201() throws Exception {
         when(userService.createUser(any(User.class))).thenReturn(sampleUser);
 
+        String userJson = """
+                {
+                    "name": "Rahul Sharma",
+                    "email": "rahul@example.com",
+                    "password": "password123",
+                    "phone": "9876543210",
+                    "role": "CUSTOMER"
+                }
+                """;
+
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleUser)))
+                        .content(userJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.email").value("rahul@example.com"));
@@ -68,12 +95,23 @@ class UserControllerTest {
         when(userService.createUser(any(User.class)))
                 .thenThrow(new ResourceAlreadyExistsException("User with email already exists"));
 
+        String userJson = """
+                {
+                    "name": "Rahul Sharma",
+                    "email": "rahul@example.com",
+                    "password": "password123",
+                    "phone": "9876543210",
+                    "role": "CUSTOMER"
+                }
+                """;
+
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleUser)))
+                        .content(userJson))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("Conflict"));
     }
+
 
     @Test
     void getUserById_Success_Returns200() throws Exception {

@@ -1,5 +1,7 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.mapper.ProviderServiceMapper;
+import com.trustfix.dto.providerservice.ProviderServiceResponse;
 import com.trustfix.entity.ProviderService;
 import com.trustfix.service.ProviderServiceService;
 import org.springframework.http.HttpStatus;
@@ -21,39 +23,47 @@ import java.util.List;
 public class ProviderServiceController {
 
     private final ProviderServiceService providerServiceService;
+    private final ProviderServiceMapper providerServiceMapper;
 
-    public ProviderServiceController(ProviderServiceService providerServiceService) {
+    public ProviderServiceController(ProviderServiceService providerServiceService, ProviderServiceMapper providerServiceMapper) {
         this.providerServiceService = providerServiceService;
+        this.providerServiceMapper = providerServiceMapper;
     }
 
     @PostMapping("/provider/{providerId}/service/{serviceId}")
-    public ResponseEntity<ProviderService> addServiceToProvider(
+    public ResponseEntity<ProviderServiceResponse> addServiceToProvider(
             @PathVariable Long providerId,
             @PathVariable Long serviceId,
             @RequestParam(required = false) BigDecimal customPrice) {
         ProviderService createdProviderService = providerServiceService.addServiceToProvider(providerId, serviceId, customPrice);
-        return new ResponseEntity<>(createdProviderService, HttpStatus.CREATED);
+        return new ResponseEntity<>(providerServiceMapper.toResponse(createdProviderService), HttpStatus.CREATED);
     }
 
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<List<ProviderService>> getServicesForProvider(@PathVariable Long providerId) {
-        List<ProviderService> services = providerServiceService.getServicesForProvider(providerId);
+    public ResponseEntity<List<ProviderServiceResponse>> getServicesForProvider(@PathVariable Long providerId) {
+        List<ProviderServiceResponse> services = providerServiceService.getServicesForProvider(providerId)
+                .stream()
+                .map(providerServiceMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(services);
     }
 
     @GetMapping("/service/{serviceId}")
-    public ResponseEntity<List<ProviderService>> getProvidersForService(@PathVariable Long serviceId) {
-        List<ProviderService> providers = providerServiceService.getProvidersForService(serviceId);
+    public ResponseEntity<List<ProviderServiceResponse>> getProvidersForService(@PathVariable Long serviceId) {
+        List<ProviderServiceResponse> providers = providerServiceService.getProvidersForService(serviceId)
+                .stream()
+                .map(providerServiceMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(providers);
     }
 
     @PutMapping("/provider/{providerId}/service/{serviceId}/price")
-    public ResponseEntity<ProviderService> updateCustomPrice(
+    public ResponseEntity<ProviderServiceResponse> updateCustomPrice(
             @PathVariable Long providerId,
             @PathVariable Long serviceId,
             @RequestParam BigDecimal customPrice) {
         ProviderService updatedProviderService = providerServiceService.updateCustomPrice(providerId, serviceId, customPrice);
-        return ResponseEntity.ok(updatedProviderService);
+        return ResponseEntity.ok(providerServiceMapper.toResponse(updatedProviderService));
     }
 
     @DeleteMapping("/provider/{providerId}/service/{serviceId}")

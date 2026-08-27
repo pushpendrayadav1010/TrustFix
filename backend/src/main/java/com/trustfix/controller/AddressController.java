@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.address.AddressRequest;
+import com.trustfix.dto.address.AddressResponse;
+import com.trustfix.dto.mapper.AddressMapper;
 import com.trustfix.entity.Address;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.service.AddressService;
@@ -23,60 +26,68 @@ import java.util.List;
 public class AddressController {
 
     private final AddressService addressService;
+    private final AddressMapper addressMapper;
 
-    public AddressController(AddressService addressService) {
+    public AddressController(AddressService addressService, AddressMapper addressMapper) {
         this.addressService = addressService;
+        this.addressMapper = addressMapper;
     }
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<Address> addAddress(
+    public ResponseEntity<AddressResponse> addAddress(
             @PathVariable Long userId,
-            @Valid @RequestBody Address address) {
+            @Valid @RequestBody AddressRequest request) {
+        Address address = addressMapper.toEntity(request);
         Address createdAddress = addressService.addAddress(userId, address);
-        return new ResponseEntity<>(createdAddress, HttpStatus.CREATED);
+        return new ResponseEntity<>(addressMapper.toResponse(createdAddress), HttpStatus.CREATED);
     }
 
     @PostMapping
-    public ResponseEntity<Address> addAddressWithQueryParam(
+    public ResponseEntity<AddressResponse> addAddressWithQueryParam(
             @RequestParam Long userId,
-            @Valid @RequestBody Address address) {
+            @Valid @RequestBody AddressRequest request) {
+        Address address = addressMapper.toEntity(request);
         Address createdAddress = addressService.addAddress(userId, address);
-        return new ResponseEntity<>(createdAddress, HttpStatus.CREATED);
+        return new ResponseEntity<>(addressMapper.toResponse(createdAddress), HttpStatus.CREATED);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Address>> getAddressesByUserId(@PathVariable Long userId) {
-        List<Address> addresses = addressService.getAddressesByUserId(userId);
+    public ResponseEntity<List<AddressResponse>> getAddressesByUserId(@PathVariable Long userId) {
+        List<AddressResponse> addresses = addressService.getAddressesByUserId(userId)
+                .stream()
+                .map(addressMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(addresses);
     }
 
     @GetMapping("/user/{userId}/default")
-    public ResponseEntity<Address> getDefaultAddressByUserId(@PathVariable Long userId) {
+    public ResponseEntity<AddressResponse> getDefaultAddressByUserId(@PathVariable Long userId) {
         Address address = addressService.getDefaultAddressByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Default address not found for user ID: " + userId));
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toResponse(address));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Address> getAddressById(@PathVariable Long id) {
+    public ResponseEntity<AddressResponse> getAddressById(@PathVariable Long id) {
         Address address = addressService.getAddressById(id);
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toResponse(address));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Address> updateAddress(
+    public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable Long id,
-            @RequestBody Address updatedAddress) {
+            @RequestBody AddressRequest request) {
+        Address updatedAddress = addressMapper.toEntity(request);
         Address address = addressService.updateAddress(id, updatedAddress);
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toResponse(address));
     }
 
     @PutMapping("/{id}/default")
-    public ResponseEntity<Address> setDefaultAddress(@PathVariable Long id) {
+    public ResponseEntity<AddressResponse> setDefaultAddress(@PathVariable Long id) {
         Address update = new Address();
         update.setDefaultAddress(true);
         Address address = addressService.updateAddress(id, update);
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toResponse(address));
     }
 
     @DeleteMapping("/{id}")

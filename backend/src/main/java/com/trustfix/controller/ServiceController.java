@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.mapper.ServiceMapper;
+import com.trustfix.dto.service.ServiceRequest;
+import com.trustfix.dto.service.ServiceResponse;
 import com.trustfix.entity.Service;
 import com.trustfix.service.ServiceCatalogService;
 import jakarta.validation.Valid;
@@ -21,49 +24,62 @@ import java.util.List;
 public class ServiceController {
 
     private final ServiceCatalogService serviceCatalogService;
+    private final ServiceMapper serviceMapper;
 
-    public ServiceController(ServiceCatalogService serviceCatalogService) {
+    public ServiceController(ServiceCatalogService serviceCatalogService, ServiceMapper serviceMapper) {
         this.serviceCatalogService = serviceCatalogService;
+        this.serviceMapper = serviceMapper;
     }
 
     @PostMapping("/category/{categoryId}")
-    public ResponseEntity<Service> createService(
+    public ResponseEntity<ServiceResponse> createService(
             @PathVariable Long categoryId,
-            @Valid @RequestBody Service service) {
+            @Valid @RequestBody ServiceRequest request) {
+        Service service = serviceMapper.toEntity(request);
         Service createdService = serviceCatalogService.createService(categoryId, service);
-        return new ResponseEntity<>(createdService, HttpStatus.CREATED);
+        return new ResponseEntity<>(serviceMapper.toResponse(createdService), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<Service>> getAllServices() {
-        List<Service> services = serviceCatalogService.getAllServices();
+    public ResponseEntity<List<ServiceResponse>> getAllServices() {
+        List<ServiceResponse> services = serviceCatalogService.getAllServices()
+                .stream()
+                .map(serviceMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(services);
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<Service>> getActiveServices() {
-        List<Service> services = serviceCatalogService.getActiveServices();
+    public ResponseEntity<List<ServiceResponse>> getActiveServices() {
+        List<ServiceResponse> services = serviceCatalogService.getActiveServices()
+                .stream()
+                .map(serviceMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(services);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Service> getServiceById(@PathVariable Long id) {
+    public ResponseEntity<ServiceResponse> getServiceById(@PathVariable Long id) {
         Service service = serviceCatalogService.getServiceById(id);
-        return ResponseEntity.ok(service);
+        return ResponseEntity.ok(serviceMapper.toResponse(service));
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<Service>> getServicesByCategoryId(@PathVariable Long categoryId) {
-        List<Service> services = serviceCatalogService.getServicesByCategoryId(categoryId);
+    public ResponseEntity<List<ServiceResponse>> getServicesByCategoryId(@PathVariable Long categoryId) {
+        List<ServiceResponse> services = serviceCatalogService.getServicesByCategoryId(categoryId)
+                .stream()
+                .map(serviceMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(services);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Service> updateService(
+    public ResponseEntity<ServiceResponse> updateService(
             @PathVariable Long id,
-            @RequestBody Service updatedService) {
+            @RequestBody ServiceRequest request) {
+        Service updatedService = serviceMapper.toEntity(request);
         Service service = serviceCatalogService.updateService(id, updatedService);
-        return ResponseEntity.ok(service);
+        return ResponseEntity.ok(serviceMapper.toResponse(service));
     }
 
     @PutMapping("/{id}/deactivate")

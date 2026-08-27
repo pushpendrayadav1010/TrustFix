@@ -56,8 +56,30 @@ public class ProviderProfile {
     @Column(name = "document_url")
     private String documentUrl;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "service_radius_km")
+    private Double serviceRadiusKm = 25.0;
+
+    @Size(max = 100, message = "City cannot exceed 100 characters")
+    @Column(name = "city", length = 100)
+    private String city;
+
+    @Size(max = 100, message = "State cannot exceed 100 characters")
+    @Column(name = "state", length = 100)
+    private String state;
+
+    @Size(max = 20, message = "Postal code cannot exceed 20 characters")
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
     @Column(name = "rating", nullable = false)
     private Double rating = 0.0;
+
 
     @Column(name = "review_count", nullable = false)
     private Integer reviewCount = 0;
@@ -158,9 +180,58 @@ public class ProviderProfile {
         this.documentUrl = documentUrl;
     }
 
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    public Double getServiceRadiusKm() {
+        return serviceRadiusKm;
+    }
+
+    public void setServiceRadiusKm(Double serviceRadiusKm) {
+        this.serviceRadiusKm = serviceRadiusKm;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
     public Double getRating() {
         return rating;
     }
+
 
     public void setRating(Double rating) {
         this.rating = rating;

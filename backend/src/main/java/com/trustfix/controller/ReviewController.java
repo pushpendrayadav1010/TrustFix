@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.mapper.ReviewMapper;
+import com.trustfix.dto.review.ReviewRequest;
+import com.trustfix.dto.review.ReviewResponse;
 import com.trustfix.entity.Review;
 import com.trustfix.service.ReviewService;
 import org.springframework.http.HttpStatus;
@@ -19,51 +22,59 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ReviewMapper reviewMapper;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService, ReviewMapper reviewMapper) {
         this.reviewService = reviewService;
+        this.reviewMapper = reviewMapper;
     }
 
     @PostMapping("/booking/{bookingId}")
-    public ResponseEntity<Review> createReviewForBooking(
+    public ResponseEntity<ReviewResponse> createReviewForBooking(
             @PathVariable Long bookingId,
             @RequestParam(required = false) Integer rating,
             @RequestParam(required = false) String comment,
-            @RequestBody(required = false) Review reviewBody) {
+            @RequestBody(required = false) ReviewRequest reviewBody) {
         Integer finalRating = rating != null ? rating : (reviewBody != null ? reviewBody.getRating() : null);
         String finalComment = comment != null ? comment : (reviewBody != null ? reviewBody.getComment() : null);
         Review review = reviewService.createReview(bookingId, finalRating, finalComment);
-        return new ResponseEntity<>(review, HttpStatus.CREATED);
+        return new ResponseEntity<>(reviewMapper.toResponse(review), HttpStatus.CREATED);
     }
 
     @PostMapping
-    public ResponseEntity<Review> createReview(
+    public ResponseEntity<ReviewResponse> createReview(
             @RequestParam(required = false) Long bookingId,
             @RequestParam(required = false) Integer rating,
             @RequestParam(required = false) String comment,
-            @RequestBody(required = false) Review reviewBody) {
-        Long finalBookingId = bookingId != null ? bookingId : (reviewBody != null && reviewBody.getBooking() != null ? reviewBody.getBooking().getId() : null);
+            @RequestBody(required = false) ReviewRequest reviewBody) {
+        Long finalBookingId = bookingId != null ? bookingId : (reviewBody != null ? reviewBody.getBookingId() : null);
         Integer finalRating = rating != null ? rating : (reviewBody != null ? reviewBody.getRating() : null);
         String finalComment = comment != null ? comment : (reviewBody != null ? reviewBody.getComment() : null);
         Review review = reviewService.createReview(finalBookingId, finalRating, finalComment);
-        return new ResponseEntity<>(review, HttpStatus.CREATED);
+        return new ResponseEntity<>(reviewMapper.toResponse(review), HttpStatus.CREATED);
     }
 
     @GetMapping("/booking/{bookingId}")
-    public ResponseEntity<Review> getReviewByBookingId(@PathVariable Long bookingId) {
+    public ResponseEntity<ReviewResponse> getReviewByBookingId(@PathVariable Long bookingId) {
         Review review = reviewService.getReviewByBookingId(bookingId);
-        return ResponseEntity.ok(review);
+        return ResponseEntity.ok(reviewMapper.toResponse(review));
     }
 
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<List<Review>> getReviewsByProviderId(@PathVariable Long providerId) {
-        List<Review> reviews = reviewService.getReviewsByProviderId(providerId);
+    public ResponseEntity<List<ReviewResponse>> getReviewsByProviderId(@PathVariable Long providerId) {
+        List<ReviewResponse> reviews = reviewService.getReviewsByProviderId(providerId)
+                .stream()
+                .map(reviewMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<Review>> getReviewsByCustomerId(@PathVariable Long customerId) {
-        List<Review> reviews = reviewService.getReviewsByCustomerId(customerId);
+    public ResponseEntity<List<ReviewResponse>> getReviewsByCustomerId(@PathVariable Long customerId) {
+        List<ReviewResponse> reviews = reviewService.getReviewsByCustomerId(customerId)
+                .stream()
+                .map(reviewMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(reviews);
     }
 }

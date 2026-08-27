@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trustfix.entity.Category;
 import com.trustfix.entity.Service;
 import com.trustfix.exception.ResourceNotFoundException;
+import com.trustfix.repository.UserRepository;
+import com.trustfix.security.JwtService;
+import com.trustfix.dto.mapper.ServiceMapper;
+import com.trustfix.repository.UserRepository;
+import com.trustfix.security.JwtService;
 import com.trustfix.service.ServiceCatalogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +43,17 @@ class ServiceControllerTest {
 
     @MockBean
     private ServiceCatalogService serviceCatalogService;
+
+    @SpyBean
+    private ServiceMapper serviceMapper;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private UserRepository userRepository;
+
+
 
     @Autowired
     private ObjectMapper objectMapper;

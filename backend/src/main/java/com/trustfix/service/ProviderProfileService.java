@@ -1,5 +1,7 @@
 package com.trustfix.service;
 
+import com.trustfix.dto.mapper.ProviderProfileMapper;
+import com.trustfix.dto.provider.ProviderLocationResponse;
 import com.trustfix.entity.ProviderProfile;
 import com.trustfix.entity.User;
 import com.trustfix.entity.UserRole;
@@ -9,10 +11,13 @@ import com.trustfix.exception.ResourceAlreadyExistsException;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.repository.ProviderProfileRepository;
 import com.trustfix.repository.UserRepository;
+import com.trustfix.util.HaversineDistanceUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -20,10 +25,14 @@ public class ProviderProfileService {
 
     private final ProviderProfileRepository providerProfileRepository;
     private final UserRepository userRepository;
+    private final ProviderProfileMapper providerProfileMapper;
 
-    public ProviderProfileService(ProviderProfileRepository providerProfileRepository, UserRepository userRepository) {
+    public ProviderProfileService(ProviderProfileRepository providerProfileRepository,
+                                  UserRepository userRepository,
+                                  ProviderProfileMapper providerProfileMapper) {
         this.providerProfileRepository = providerProfileRepository;
         this.userRepository = userRepository;
+        this.providerProfileMapper = providerProfileMapper;
     }
 
     public ProviderProfile createProviderProfile(Long userId, ProviderProfile profile) {
@@ -68,6 +77,34 @@ public class ProviderProfileService {
         return providerProfileRepository.findByVerificationStatusAndAvailableTrue(VerificationStatus.VERIFIED);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProviderLocationResponse> findNearbyProviders(Double customerLat, Double customerLng, Double radiusKm, Long serviceId) {
+        if (customerLat == null || customerLng == null) {
+            throw new BadRequestException("Latitude and longitude parameters are required for nearby provider search");
+        }
+        double maxRadius = (radiusKm != null && radiusKm > 0) ? radiusKm : 25.0;
+
+        List<ProviderProfile> providers;
+        if (serviceId != null) {
+            providers = providerProfileRepository.findAvailableVerifiedProvidersByServiceId(VerificationStatus.VERIFIED, serviceId);
+        } else {
+            providers = providerProfileRepository.findByVerificationStatusAndAvailableTrue(VerificationStatus.VERIFIED);
+        }
+
+        return providers.stream()
+                .map(provider -> {
+                    double distance = HaversineDistanceUtil.calculateDistanceKm(customerLat, customerLng, provider.getLatitude(), provider.getLongitude());
+                    double providerMaxRadius = provider.getServiceRadiusKm() != null ? provider.getServiceRadiusKm() : 25.0;
+                    if (distance <= maxRadius && distance <= providerMaxRadius) {
+                        return providerProfileMapper.toLocationResponse(provider, Math.round(distance * 100.0) / 100.0);
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingDouble(ProviderLocationResponse::getDistanceKm))
+                .toList();
+    }
+
     public ProviderProfile updateProviderProfile(Long providerId, ProviderProfile updatedDetails) {
         ProviderProfile existingProfile = getProviderById(providerId);
 
@@ -82,6 +119,24 @@ public class ProviderProfileService {
         }
         if (updatedDetails.getDocumentUrl() != null) {
             existingProfile.setDocumentUrl(updatedDetails.getDocumentUrl());
+        }
+        if (updatedDetails.getLatitude() != null) {
+            existingProfile.setLatitude(updatedDetails.getLatitude());
+        }
+        if (updatedDetails.getLongitude() != null) {
+            existingProfile.setLongitude(updatedDetails.getLongitude());
+        }
+        if (updatedDetails.getServiceRadiusKm() != null) {
+            existingProfile.setServiceRadiusKm(updatedDetails.getServiceRadiusKm());
+        }
+        if (updatedDetails.getCity() != null) {
+            existingProfile.setCity(updatedDetails.getCity());
+        }
+        if (updatedDetails.getState() != null) {
+            existingProfile.setState(updatedDetails.getState());
+        }
+        if (updatedDetails.getPostalCode() != null) {
+            existingProfile.setPostalCode(updatedDetails.getPostalCode());
         }
         existingProfile.setAvailable(updatedDetails.isAvailable());
 

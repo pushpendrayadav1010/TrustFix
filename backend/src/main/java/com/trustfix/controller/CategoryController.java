@@ -1,5 +1,8 @@
 package com.trustfix.controller;
 
+import com.trustfix.dto.category.CategoryRequest;
+import com.trustfix.dto.category.CategoryResponse;
+import com.trustfix.dto.mapper.CategoryMapper;
 import com.trustfix.entity.Category;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.service.CategoryService;
@@ -22,46 +25,56 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final CategoryMapper categoryMapper;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, CategoryMapper categoryMapper) {
         this.categoryService = categoryService;
+        this.categoryMapper = categoryMapper;
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category) {
+    public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request) {
+        Category category = categoryMapper.toEntity(request);
         Category createdCategory = categoryService.createCategory(category);
-        return new ResponseEntity<>(createdCategory, HttpStatus.CREATED);
+        return new ResponseEntity<>(categoryMapper.toResponse(createdCategory), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        List<Category> categories = categoryService.getAllCategories();
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+        List<CategoryResponse> categories = categoryService.getAllCategories()
+                .stream()
+                .map(categoryMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(categories);
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<Category>> getActiveCategories() {
-        List<Category> categories = categoryService.getActiveCategories();
+    public ResponseEntity<List<CategoryResponse>> getActiveCategories() {
+        List<CategoryResponse> categories = categoryService.getActiveCategories()
+                .stream()
+                .map(categoryMapper::toResponse)
+                .toList();
         return ResponseEntity.ok(categories);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Long id) {
         Category category = categoryService.getCategoryById(id);
-        return ResponseEntity.ok(category);
+        return ResponseEntity.ok(categoryMapper.toResponse(category));
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<Category> getCategoryByName(@PathVariable String name) {
+    public ResponseEntity<CategoryResponse> getCategoryByName(@PathVariable String name) {
         Category category = categoryService.findByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with name: " + name));
-        return ResponseEntity.ok(category);
+        return ResponseEntity.ok(categoryMapper.toResponse(category));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable Long id, @RequestBody CategoryRequest request) {
+        Category categoryDetails = categoryMapper.toEntity(request);
         Category updatedCategory = categoryService.updateCategory(id, categoryDetails);
-        return ResponseEntity.ok(updatedCategory);
+        return ResponseEntity.ok(categoryMapper.toResponse(updatedCategory));
     }
 
     @PutMapping("/{id}/deactivate")
