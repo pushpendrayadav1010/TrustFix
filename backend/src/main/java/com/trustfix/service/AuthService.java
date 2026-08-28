@@ -42,10 +42,8 @@ public class AuthService {
             );
         }
 
-        // New users are customers by default
-        if (user.getRole() == null) {
-            user.setRole(UserRole.CUSTOMER);
-        }
+        // Every new registration starts as CUSTOMER
+        user.setRole(UserRole.CUSTOMER);
 
         // Password is stored as BCrypt hash
         user.setPassword(passwordEncoder.encode(user.getPassword()));
