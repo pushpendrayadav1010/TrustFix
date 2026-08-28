@@ -190,6 +190,30 @@ export const providerService = {
     }
   },
 
+  getProviders: async (filters = {}) => {
+    try {
+      const response = await apiClient.get('/providers/verified');
+      let list = Array.isArray(response.data) ? response.data.map(mapProviderProfile) : [];
+
+      if (filters.search) {
+        const q = filters.search.toLowerCase().trim();
+        list = list.filter(p =>
+          p.name?.toLowerCase().includes(q) ||
+          p.companyName?.toLowerCase().includes(q) ||
+          p.city?.toLowerCase().includes(q) ||
+          p.serviceArea?.toLowerCase().includes(q)
+        );
+      }
+      if (filters.onlyAvailable) {
+        list = list.filter(p => p.available);
+      }
+      return list;
+    } catch (error) {
+      console.warn('[providerService] Error fetching providers:', error);
+      return [];
+    }
+  },
+
   getVerifiedProviders: async () => {
     try {
       const response = await apiClient.get('/providers/verified');
