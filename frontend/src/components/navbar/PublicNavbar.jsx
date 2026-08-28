@@ -55,7 +55,7 @@ export const PublicNavbar = () => {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               <Link to={getDashboardPath()} className="btn btn-sm btn-primary">
-                <span>Dashboard ({role === 'PROVIDER' ? 'Provider' : 'Customer'})</span>
+                <span>Dashboard ({role === 'PROVIDER' ? 'Provider' : role === 'ADMIN' ? 'Admin' : 'Customer'})</span>
               </Link>
               <button onClick={handleLogout} className="btn btn-sm btn-secondary" title="Log out">
                 Logout

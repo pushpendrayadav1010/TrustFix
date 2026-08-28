@@ -96,7 +96,7 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
               {role === 'PROVIDER' && providerProfile ? (
                 <VerificationBadge status={providerProfile.verificationStatus} size="sm" />
               ) : (
-                <span className="text-xs text-muted">Customer</span>
+                <span className="text-xs text-muted">{role === 'ADMIN' ? 'Administrator' : 'Customer'}</span>
               )}
             </div>
           </div>
