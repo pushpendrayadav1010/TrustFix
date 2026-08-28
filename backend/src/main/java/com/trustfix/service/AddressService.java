@@ -5,6 +5,7 @@ import com.trustfix.entity.User;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.repository.AddressRepository;
 import com.trustfix.repository.UserRepository;
+import com.trustfix.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,13 +18,16 @@ public class AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final SecurityUtil securityUtil;
 
-    public AddressService(AddressRepository addressRepository, UserRepository userRepository) {
+    public AddressService(AddressRepository addressRepository, UserRepository userRepository, SecurityUtil securityUtil) {
         this.addressRepository = addressRepository;
         this.userRepository = userRepository;
+        this.securityUtil = securityUtil;
     }
 
     public Address addAddress(Long userId, Address address) {
+        securityUtil.verifyUserOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
@@ -39,6 +43,7 @@ public class AddressService {
 
     @Transactional(readOnly = true)
     public List<Address> getAddressesByUserId(Long userId) {
+        securityUtil.verifyUserOwnershipOrAdmin(userId);
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with ID: " + userId);
         }
@@ -47,17 +52,22 @@ public class AddressService {
 
     @Transactional(readOnly = true)
     public Optional<Address> getDefaultAddressByUserId(Long userId) {
+        securityUtil.verifyUserOwnershipOrAdmin(userId);
         return addressRepository.findByUserIdAndDefaultAddressTrue(userId);
     }
 
     @Transactional(readOnly = true)
     public Address getAddressById(Long id) {
-        return addressRepository.findById(id)
+        Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + id));
+        securityUtil.verifyAddressOwnershipOrAdmin(address);
+        return address;
     }
 
     public Address updateAddress(Long addressId, Address updatedAddress) {
-        Address existingAddress = getAddressById(addressId);
+        Address existingAddress = addressRepository.findById(addressId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
+        securityUtil.verifyAddressOwnershipOrAdmin(existingAddress);
 
         if (updatedAddress.isDefaultAddress() && !existingAddress.isDefaultAddress()) {
             unsetExistingDefaultAddress(existingAddress.getUser().getId());
@@ -90,7 +100,10 @@ public class AddressService {
     }
 
     public void deleteAddress(Long addressId) {
-        Address address = getAddressById(addressId);
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with ID: " + addressId));
+        securityUtil.verifyAddressOwnershipOrAdmin(address);
+
         boolean wasDefault = address.isDefaultAddress();
         Long userId = address.getUser().getId();
 

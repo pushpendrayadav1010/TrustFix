@@ -4,13 +4,13 @@ import { userService } from '../../services/userService';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { MapView } from '../../components/map/MapView';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
 
 export const CustomerAddressesPage = () => {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // Add / Edit Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -26,14 +26,18 @@ export const CustomerAddressesPage = () => {
     landmark: '',
     isDefault: false,
     latitude: 19.1136,
-    longitude: 72.8697
+    longitude: 72.8697,
   });
 
   const fetchAddresses = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      const data = await userService.getAddresses(user?.id || 1);
+      const data = await userService.getAddresses(user.id);
       setAddresses(data);
+    } catch (err) {
+      console.error('Failed to load addresses:', err);
+      setAddresses([]);
     } finally {
       setLoading(false);
     }
@@ -56,7 +60,7 @@ export const CustomerAddressesPage = () => {
       landmark: '',
       isDefault: addresses.length === 0,
       latitude: 19.1136,
-      longitude: 72.8697
+      longitude: 72.8697,
     });
     setModalOpen(true);
   };
@@ -69,31 +73,47 @@ export const CustomerAddressesPage = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this address?')) {
-      await userService.deleteAddress(id);
-      fetchAddresses();
+      try {
+        await userService.deleteAddress(id);
+        fetchAddresses();
+      } catch (err) {
+        alert('Delete address failed: ' + (err.response?.data?.message || err.message));
+      }
     }
   };
 
   const handleSetDefault = async (id) => {
-    await userService.setDefaultAddress(id);
-    fetchAddresses();
+    try {
+      await userService.setDefaultAddress(id);
+      fetchAddresses();
+    } catch (err) {
+      alert('Failed to set default address: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingAddress) {
-      await userService.updateAddress(editingAddress.id, formData);
-    } else {
-      await userService.addAddress({ ...formData, userId: user?.id || 1 });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const userId = user?.id || 4;
+      if (editingAddress) {
+        await userService.updateAddress(editingAddress.id, formData);
+      } else {
+        await userService.addAddress(userId, { ...formData });
+      }
+      setModalOpen(false);
+      fetchAddresses();
+    } catch (err) {
+      alert('Failed to save address: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
     }
-    setModalOpen(false);
-    fetchAddresses();
   };
 
   return (
     <div className="customer-addresses-page" style={{ padding: '2rem 0 4rem 0' }}>
       <div className="container">
-        
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div>
@@ -142,7 +162,7 @@ export const CustomerAddressesPage = () => {
                     {addr.flat}
                   </p>
                   <p className="text-xs text-muted">
-                    {addr.street}, {addr.area}
+                    {addr.street}, {addr.city}
                   </p>
                   <p className="text-xs text-muted">
                     {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
@@ -153,11 +173,6 @@ export const CustomerAddressesPage = () => {
                       Landmark: {addr.landmark}
                     </p>
                   )}
-
-                  {/* Future-Ready Location Coordinates Preview */}
-                  <div style={{ marginTop: '0.75rem', padding: '6px 10px', backgroundColor: 'var(--neutral-50)', borderRadius: 'var(--radius-sm)', fontSize: '11px', color: 'var(--neutral-500)' }}>
-                    🗺️ Mock Geo: Lat {addr.latitude?.toFixed(4)}, Lon {addr.longitude?.toFixed(4)}
-                  </div>
                 </div>
 
                 <div className="card-footer flex items-center justify-end gap-2">
@@ -191,7 +206,7 @@ export const CustomerAddressesPage = () => {
           footer={
             <>
               <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleSubmit}>
+              <Button variant="primary" loading={submitting} onClick={handleSubmit}>
                 {editingAddress ? 'Save Address Changes' : 'Save New Address'}
               </Button>
             </>
@@ -203,7 +218,7 @@ export const CustomerAddressesPage = () => {
                 label="Address Label"
                 placeholder="e.g. Home, Office, Parents"
                 value={formData.label}
-                onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, label: e.target.value }))}
                 required
               />
 
@@ -211,7 +226,7 @@ export const CustomerAddressesPage = () => {
                 label="House / Flat / Building"
                 placeholder="e.g. Flat 402, Sunshine Apts"
                 value={formData.flat}
-                onChange={(e) => setFormData(prev => ({ ...prev, flat: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, flat: e.target.value }))}
                 required
               />
             </div>
@@ -220,7 +235,7 @@ export const CustomerAddressesPage = () => {
               label="Street / Road"
               placeholder="e.g. MG Road, Near Station"
               value={formData.street}
-              onChange={(e) => setFormData(prev => ({ ...prev, street: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, street: e.target.value }))}
               required
             />
 
@@ -229,7 +244,7 @@ export const CustomerAddressesPage = () => {
                 label="Area / Locality"
                 placeholder="e.g. Thane West"
                 value={formData.area}
-                onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                 required
               />
 
@@ -237,7 +252,7 @@ export const CustomerAddressesPage = () => {
                 label="Pincode"
                 placeholder="e.g. 400601"
                 value={formData.pincode}
-                onChange={(e) => setFormData(prev => ({ ...prev, pincode: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
                 required
               />
             </div>
@@ -246,7 +261,7 @@ export const CustomerAddressesPage = () => {
               <Input
                 label="City"
                 value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
                 required
               />
 
@@ -254,7 +269,7 @@ export const CustomerAddressesPage = () => {
                 label="Landmark (Optional)"
                 placeholder="e.g. Opposite ICICI Bank"
                 value={formData.landmark}
-                onChange={(e) => setFormData(prev => ({ ...prev, landmark: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
               />
             </div>
 
@@ -262,13 +277,12 @@ export const CustomerAddressesPage = () => {
               <input
                 type="checkbox"
                 checked={formData.isDefault}
-                onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))}
               />
               <span>Set as my default service address</span>
             </label>
           </form>
         </Modal>
-
       </div>
     </div>
   );

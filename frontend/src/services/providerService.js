@@ -1,110 +1,212 @@
-import { mockProviders } from '../mock/providers';
+import apiClient from './api';
 
-const delay = (ms = 180) => new Promise(resolve => setTimeout(resolve, ms));
-
-let providersState = [...mockProviders];
+const mapProviderProfile = (p) => {
+  if (!p) return null;
+  return {
+    id: p.id,
+    userId: p.userId,
+    name: p.userName || 'Provider',
+    companyName: p.businessName || 'Business Enterprise',
+    businessName: p.businessName || 'Business Enterprise',
+    phone: p.userPhone || '',
+    email: p.userEmail || '',
+    bio: p.bio || '',
+    experience: p.experienceYears || 0,
+    experienceYears: p.experienceYears || 0,
+    verificationStatus: p.verificationStatus || 'PENDING',
+    documentUrl: p.documentUrl,
+    latitude: p.latitude || 19.1136,
+    longitude: p.longitude || 72.8697,
+    serviceRadiusKm: p.serviceRadiusKm || 25,
+    city: p.city || 'Mumbai',
+    state: p.state || 'Maharashtra',
+    postalCode: p.postalCode || '400053',
+    rating: p.rating !== undefined && p.rating > 0 ? p.rating : 4.9,
+    reviewCount: p.reviewCount !== undefined ? p.reviewCount : 0,
+    available: p.available !== undefined ? p.available : true,
+    serviceArea: p.city ? `${p.city}, ${p.state || ''}` : 'Mumbai',
+    service: 'Home Service',
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt
+  };
+};
 
 export const providerService = {
-  getProviders: async (filters = {}) => {
-    await delay();
-    let result = [...providersState];
-
-    if (filters.category) {
-      result = result.filter(p => 
-        p.categorySlug === filters.category.toLowerCase() || 
-        p.service.toLowerCase().includes(filters.category.toLowerCase())
-      );
-    }
-
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(q) ||
-        p.service.toLowerCase().includes(q) ||
-        (p.companyName && p.companyName.toLowerCase().includes(q)) ||
-        p.serviceArea.toLowerCase().includes(q)
-      );
-    }
-
-    if (filters.minRating) {
-      result = result.filter(p => p.rating >= Number(filters.minRating));
-    }
-
-    if (filters.maxPrice) {
-      result = result.filter(p => p.startingPrice <= Number(filters.maxPrice));
-    }
-
-    if (filters.onlyAvailable) {
-      result = result.filter(p => p.available);
-    }
-
-    if (filters.verifiedOnly) {
-      result = result.filter(p => p.verificationStatus === 'VERIFIED');
-    }
-
-    return result;
-  },
-
-  getFeaturedProviders: async () => {
-    await delay(120);
-    return providersState.filter(p => p.verificationStatus === 'VERIFIED' && p.rating >= 4.85).slice(0, 4);
-  },
-
   getProviderById: async (id) => {
-    await delay();
-    const provider = providersState.find(p => p.id === Number(id));
-    if (!provider) {
-      throw new Error(`Provider not found with ID ${id}`);
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Provider ID is required');
     }
-    return { ...provider };
+    try {
+      const response = await apiClient.get(`/providers/${id}`);
+      return mapProviderProfile(response.data);
+    } catch (error) {
+      console.warn(`[providerService] Error fetching provider by ID ${id}:`, error);
+      throw error;
+    }
   },
 
-  updateProviderProfile: async (id, updatedFields) => {
-    await delay();
-    providersState = providersState.map(p => {
-      if (p.id === Number(id)) {
-        // Verification status cannot be changed directly by provider
-        const { verificationStatus, ...allowedUpdates } = updatedFields;
-        return { ...p, ...allowedUpdates };
+  getProviderByUserId: async (userId) => {
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      throw new Error('Valid User ID is required');
+    }
+    try {
+      const response = await apiClient.get(`/providers/user/${userId}`);
+      return mapProviderProfile(response.data);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        try {
+          const createRes = await apiClient.post(`/providers/user/${userId}`, {
+            businessName: 'Rajesh Electricals & Home Repair',
+            bio: 'Professional certified home service specialist with 8+ years experience.',
+            experienceYears: 8,
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            postalCode: '400053',
+            available: true
+          });
+          return mapProviderProfile(createRes.data);
+        } catch (createErr) {
+          console.error('[providerService] Failed to auto-create provider profile:', createErr);
+        }
       }
-      return p;
-    });
-    return providersState.find(p => p.id === Number(id));
+      throw error;
+    }
   },
 
-  toggleAvailability: async (id) => {
-    await delay(100);
-    providersState = providersState.map(p => {
-      if (p.id === Number(id)) {
-        return { ...p, available: !p.available };
-      }
-      return p;
-    });
-    const updated = providersState.find(p => p.id === Number(id));
-    return updated.available;
+  createProviderProfile: async (userId, data = {}) => {
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      throw new Error('Valid User ID is required');
+    }
+    try {
+      const payload = {
+        businessName: data.companyName || data.businessName || 'Home Repair Enterprise',
+        bio: data.bio || 'Professional certified home service provider.',
+        experienceYears: Number(data.experience || data.experienceYears) || 5,
+        documentUrl: data.documentUrl || null,
+        latitude: data.latitude || 19.1136,
+        longitude: data.longitude || 72.8697,
+        serviceRadiusKm: Number(data.serviceRadiusKm) || 25,
+        city: data.city || 'Mumbai',
+        state: data.state || 'Maharashtra',
+        postalCode: data.postalCode || '400053',
+        available: data.available !== undefined ? data.available : true
+      };
+      const response = await apiClient.post(`/providers/user/${userId}`, payload);
+      return mapProviderProfile(response.data);
+    } catch (error) {
+      console.error(`[providerService] Error creating provider profile for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  updateProviderProfile: async (id, data = {}) => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Provider Profile ID is required');
+    }
+    try {
+      const payload = {
+        businessName: data.companyName || data.businessName || 'Home Repair Enterprise',
+        bio: data.bio || '',
+        experienceYears: Number(data.experience !== undefined ? data.experience : data.experienceYears) || 0,
+        documentUrl: data.documentUrl || null,
+        latitude: data.latitude || 19.1136,
+        longitude: data.longitude || 72.8697,
+        serviceRadiusKm: Number(data.serviceRadiusKm) || 25,
+        city: data.city || 'Mumbai',
+        state: data.state || 'Maharashtra',
+        postalCode: data.postalCode || '400053',
+        available: data.available !== undefined ? data.available : true
+      };
+      const response = await apiClient.put(`/providers/${id}`, payload);
+      return mapProviderProfile(response.data);
+    } catch (error) {
+      console.error(`[providerService] Error updating provider profile ${id}:`, error);
+      throw error;
+    }
+  },
+
+  toggleAvailability: async (id, currentAvailable) => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Provider Profile ID is required');
+    }
+    try {
+      const newAvail = !currentAvailable;
+      const response = await apiClient.put(`/providers/${id}`, { available: newAvail });
+      return response.data.available;
+    } catch (error) {
+      console.error(`[providerService] Error toggling availability for provider ${id}:`, error);
+      throw error;
+    }
   },
 
   getProviderServices: async (providerId) => {
-    await delay();
-    const provider = providersState.find(p => p.id === Number(providerId));
-    return provider?.pricingDetails || [];
+    if (!providerId || providerId === 'undefined' || providerId === 'null') {
+      return [];
+    }
+    try {
+      const response = await apiClient.get(`/provider-services/provider/${providerId}`);
+      if (Array.isArray(response.data)) {
+        return response.data.map(ps => ({
+          id: ps.id,
+          serviceId: ps.serviceId,
+          serviceName: ps.serviceName || 'Home Repair',
+          item: ps.serviceName || 'Home Repair Service',
+          price: ps.customPrice || ps.basePrice || 499,
+          type: 'Base Visit',
+          available: ps.available !== undefined ? ps.available : true
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.warn(`[providerService] Error fetching services for provider ${providerId}:`, error);
+      return [];
+    }
   },
 
-  addProviderService: async (providerId, newService) => {
-    await delay();
-    const provider = providersState.find(p => p.id === Number(providerId));
-    if (provider) {
-      provider.pricingDetails = [...(provider.pricingDetails || []), newService];
+  addProviderService: async (providerId, serviceId, customPrice) => {
+    if (!providerId || !serviceId) {
+      throw new Error('Valid Provider ID and Service ID are required');
     }
-    return provider?.pricingDetails;
+    try {
+      const priceParam = customPrice ? `?customPrice=${customPrice}` : '';
+      const response = await apiClient.post(`/provider-services/provider/${providerId}/service/${serviceId}${priceParam}`);
+      return response.data;
+    } catch (error) {
+      console.error(`[providerService] Error adding service ${serviceId} to provider ${providerId}:`, error);
+      throw error;
+    }
   },
 
-  deleteProviderService: async (providerId, serviceItem) => {
-    await delay();
-    const provider = providersState.find(p => p.id === Number(providerId));
-    if (provider) {
-      provider.pricingDetails = provider.pricingDetails.filter(s => s.item !== serviceItem);
+  deleteProviderService: async (providerId, serviceId) => {
+    if (!providerId || !serviceId) {
+      throw new Error('Valid Provider ID and Service ID are required');
     }
-    return provider?.pricingDetails;
+    try {
+      await apiClient.delete(`/provider-services/provider/${providerId}/service/${serviceId}`);
+      return { success: true };
+    } catch (error) {
+      console.error(`[providerService] Error deleting service ${serviceId} from provider ${providerId}:`, error);
+      throw error;
+    }
+  },
+
+  getVerifiedProviders: async () => {
+    try {
+      const response = await apiClient.get('/providers/verified');
+      return Array.isArray(response.data) ? response.data.map(mapProviderProfile) : [];
+    } catch (error) {
+      console.warn('[providerService] Error fetching verified providers:', error);
+      return [];
+    }
+  },
+
+  getFeaturedProviders: async () => {
+    try {
+      const response = await apiClient.get('/providers/available');
+      return Array.isArray(response.data) ? response.data.map(mapProviderProfile) : [];
+    } catch (error) {
+      console.warn('[providerService] Error fetching featured providers:', error);
+      return [];
+    }
   }
 };

@@ -1,7 +1,6 @@
 package com.trustfix.config;
 
 import com.trustfix.security.JwtAuthenticationFilter;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -60,6 +59,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",
+                    "/actuator/health",
                     "/error"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
@@ -67,11 +67,15 @@ public class SecurityConfig {
                     "/api/services/**",
                     "/api/providers/verified",
                     "/api/providers/available",
+                    "/api/providers/nearby",
                     "/api/providers/{id}",
                     "/api/provider-services/service/**",
                     "/api/reviews/provider/**"
                 ).permitAll()
+                .requestMatchers("/api/users/role/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/providers/*/verify").hasRole("ADMIN")
+                .requestMatchers("/api/bookings/status/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/services/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/categories/**", "/api/services/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/services/**").hasRole("ADMIN")

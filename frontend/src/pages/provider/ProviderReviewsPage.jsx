@@ -13,10 +13,18 @@ export const ProviderReviewsPage = () => {
 
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!providerProfile?.id) {
+        setReviews([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const data = await reviewService.getProviderReviews(providerProfile?.id || 101);
+        const data = await reviewService.getProviderReviews(providerProfile.id);
         setReviews(data);
+      } catch (e) {
+        console.error('Failed to fetch provider reviews:', e);
+        setReviews([]);
       } finally {
         setLoading(false);
       }

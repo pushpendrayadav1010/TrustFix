@@ -7,10 +7,12 @@ import com.trustfix.entity.User;
 import com.trustfix.entity.UserRole;
 import com.trustfix.entity.VerificationStatus;
 import com.trustfix.exception.BadRequestException;
+import com.trustfix.exception.ForbiddenException;
 import com.trustfix.exception.ResourceAlreadyExistsException;
 import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.repository.ProviderProfileRepository;
 import com.trustfix.repository.UserRepository;
+import com.trustfix.security.SecurityUtil;
 import com.trustfix.util.HaversineDistanceUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,16 +28,20 @@ public class ProviderProfileService {
     private final ProviderProfileRepository providerProfileRepository;
     private final UserRepository userRepository;
     private final ProviderProfileMapper providerProfileMapper;
+    private final SecurityUtil securityUtil;
 
     public ProviderProfileService(ProviderProfileRepository providerProfileRepository,
                                   UserRepository userRepository,
-                                  ProviderProfileMapper providerProfileMapper) {
+                                  ProviderProfileMapper providerProfileMapper,
+                                  SecurityUtil securityUtil) {
         this.providerProfileRepository = providerProfileRepository;
         this.userRepository = userRepository;
         this.providerProfileMapper = providerProfileMapper;
+        this.securityUtil = securityUtil;
     }
 
     public ProviderProfile createProviderProfile(Long userId, ProviderProfile profile) {
+        securityUtil.verifyUserOwnershipOrAdmin(userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
@@ -63,6 +69,7 @@ public class ProviderProfileService {
 
     @Transactional(readOnly = true)
     public ProviderProfile getProviderByUserId(Long userId) {
+        securityUtil.verifyUserOwnershipOrAdmin(userId);
         return providerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found for user ID: " + userId));
     }
@@ -106,6 +113,7 @@ public class ProviderProfileService {
     }
 
     public ProviderProfile updateProviderProfile(Long providerId, ProviderProfile updatedDetails) {
+        securityUtil.verifyProviderOwnershipOrAdmin(providerId);
         ProviderProfile existingProfile = getProviderById(providerId);
 
         if (updatedDetails.getBusinessName() != null) {
@@ -144,6 +152,9 @@ public class ProviderProfileService {
     }
 
     public ProviderProfile updateVerificationStatus(Long providerId, VerificationStatus status) {
+        if (!securityUtil.isAdmin()) {
+            throw new ForbiddenException("Only administrators can verify or reject service provider accounts");
+        }
         if (status == null) {
             throw new BadRequestException("Verification status cannot be null");
         }

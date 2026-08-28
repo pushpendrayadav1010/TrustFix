@@ -30,7 +30,17 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
     { to: '/provider/availability', label: 'Availability', icon: '⏰' },
   ];
 
-  const links = role === 'PROVIDER' ? providerLinks : customerLinks;
+  const adminLinks = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: '📊', end: true },
+    { to: '/admin/users', label: 'Users Directory', icon: '👥' },
+    { to: '/admin/providers', label: 'Provider Verification', icon: '🛡️' },
+    { to: '/admin/categories', label: 'Category Catalog', icon: '🗂️' },
+    { to: '/admin/services', label: 'Service Catalog', icon: '📋' },
+    { to: '/admin/bookings', label: 'Bookings Monitor', icon: '📅' },
+  ];
+
+  const links = role === 'ADMIN' ? adminLinks : role === 'PROVIDER' ? providerLinks : customerLinks;
+  const portalLabel = role === 'ADMIN' ? 'Admin Portal' : role === 'PROVIDER' ? 'Provider Portal' : 'Customer Account';
 
   return (
     <aside className="dashboard-sidebar">
@@ -47,7 +57,7 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
       {/* Navigation List */}
       <nav className="sidebar-nav">
         <div style={{ padding: '0 8px 8px 8px', fontSize: '11px', fontWeight: 700, color: 'var(--neutral-400)', textTransform: 'uppercase' }}>
-          {role === 'PROVIDER' ? 'Provider Portal' : 'Customer Account'}
+          {portalLabel}
         </div>
 
         {links.map((link) => (

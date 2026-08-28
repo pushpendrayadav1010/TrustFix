@@ -17,27 +17,53 @@ export const ProviderProfilePage = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: providerProfile?.name || user?.name || 'Rajesh Kumar',
-    companyName: providerProfile?.companyName || 'Kumar Electrical Solutions',
-    phone: providerProfile?.phone || user?.phone || '+91 98202 23456',
-    experience: providerProfile?.experience || 8,
-    service: providerProfile?.service || 'Electrical',
-    serviceArea: providerProfile?.serviceArea || 'Thane, Mulund, Bhandup',
-    bio: providerProfile?.bio || 'Certified electrician with expertise in home wiring, short circuit testing, and installations.',
+    name: providerProfile?.name || user?.name || '',
+    companyName: providerProfile?.companyName || providerProfile?.businessName || '',
+    phone: providerProfile?.phone || user?.phone || '',
+    experience: providerProfile?.experience || providerProfile?.experienceYears || 0,
+    service: providerProfile?.service || 'Home Service',
+    city: providerProfile?.city || 'Mumbai',
+    state: providerProfile?.state || 'Maharashtra',
+    postalCode: providerProfile?.postalCode || '400053',
+    serviceArea: providerProfile?.serviceArea || 'Mumbai, Maharashtra',
+    bio: providerProfile?.bio || ''
   });
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const loc = await locationService.getLocationByProviderId(providerProfile?.id || 101);
+        let activeProfile = providerProfile;
+        if (!activeProfile && user?.id) {
+          activeProfile = await providerService.getProviderByUserId(user.id);
+          updateProvider(activeProfile);
+        }
+
+        if (activeProfile) {
+          setFormData({
+            name: activeProfile.name || user?.name || '',
+            companyName: activeProfile.companyName || activeProfile.businessName || '',
+            phone: activeProfile.phone || user?.phone || '',
+            experience: activeProfile.experience || activeProfile.experienceYears || 0,
+            service: activeProfile.service || 'Home Service',
+            city: activeProfile.city || 'Mumbai',
+            state: activeProfile.state || 'Maharashtra',
+            postalCode: activeProfile.postalCode || '400053',
+            serviceArea: activeProfile.serviceArea || `${activeProfile.city || 'Mumbai'}, ${activeProfile.state || ''}`,
+            bio: activeProfile.bio || ''
+          });
+        }
+
+        const loc = await locationService.getLocationByProviderId(activeProfile?.id || 1).catch(() => null);
         setProviderLoc(loc);
+      } catch (err) {
+        console.error('Failed to load provider profile:', err);
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [providerProfile]);
+  }, [user, providerProfile?.id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,10 +74,22 @@ export const ProviderProfilePage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const updated = await providerService.updateProviderProfile(providerProfile?.id || 101, formData);
+      let targetId = providerProfile?.id;
+      if (!targetId && user?.id) {
+        const fetched = await providerService.getProviderByUserId(user.id);
+        targetId = fetched.id;
+      }
+
+      if (!targetId) {
+        throw new Error('Provider Profile ID missing');
+      }
+
+      const updated = await providerService.updateProviderProfile(targetId, formData);
       updateProvider(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to update provider profile:', err);
     } finally {
       setSaving(false);
     }

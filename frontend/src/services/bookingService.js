@@ -1,137 +1,169 @@
-import { mockBookings } from '../mock/bookings';
-import { mockProviders } from '../mock/providers';
+import apiClient from './api';
 
-const delay = (ms = 200) => new Promise(resolve => setTimeout(resolve, ms));
+const formatToTime = (timeStr) => {
+  if (!timeStr) return '10:00:00';
+  if (/^\d{2}:\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return '10:00:00';
+  let [_, hours, minutes, period] = match;
+  let h = parseInt(hours, 10);
+  if (period) {
+    if (period.toUpperCase() === 'PM' && h < 12) h += 12;
+    if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+  }
+  return `${String(h).padStart(2, '0')}:${minutes}:00`;
+};
 
-let bookingsState = [...mockBookings];
+const mapBookingResponse = (b) => {
+  if (!b) return null;
+  return {
+    id: b.id,
+    bookingReference: b.bookingReference || `BK-${b.id}`,
+    customerId: b.customerId,
+    customerName: b.customerName || 'Customer',
+    customerEmail: b.customerEmail,
+    customerPhone: b.customerPhone,
+    providerId: b.providerId,
+    providerName: b.providerBusinessName || 'Assigned Specialist',
+    serviceId: b.serviceId,
+    serviceName: b.serviceName || 'Home Service',
+    addressId: b.addressId,
+    address: {
+      flat: b.addressLine1 || '',
+      street: b.city || '',
+      city: b.city || 'Mumbai',
+      pincode: b.postalCode || '400001',
+    },
+    date: b.bookingDate || new Date().toISOString().split('T')[0],
+    time: b.bookingTime ? String(b.bookingTime).slice(0, 5) : '10:00',
+    status: b.status || 'PENDING',
+    price: b.totalAmount || 0,
+    totalPrice: b.totalAmount || 0,
+    notes: b.notes,
+    description: b.notes || 'Service appointment requested',
+    cancellationReason: b.cancellationReason,
+    createdAt: b.createdAt || new Date().toISOString(),
+    updatedAt: b.updatedAt || new Date().toISOString(),
+    timeline: [
+      { step: 'Booking Created', time: b.createdAt ? new Date(b.createdAt).toLocaleString() : new Date().toLocaleString(), done: true, desc: 'Booking request submitted.' },
+      { step: 'Provider Accepted', time: b.status !== 'PENDING' ? 'Confirmed' : 'Awaiting confirmation', done: b.status !== 'PENDING' && b.status !== 'CANCELLED', desc: b.providerBusinessName ? `Assigned to ${b.providerBusinessName}` : 'Awaiting technician dispatch.' },
+      { step: 'Service In Progress', time: b.status === 'IN_PROGRESS' || b.status === 'COMPLETED' ? 'In Progress' : 'Pending', done: b.status === 'IN_PROGRESS' || b.status === 'COMPLETED', desc: 'Technician dispatched to location.' },
+      { step: 'Completed & Verified', time: b.status === 'COMPLETED' ? 'Completed' : 'Pending', done: b.status === 'COMPLETED', desc: 'Service finished and inspected.' },
+    ],
+  };
+};
 
 export const bookingService = {
+  // Real API create booking using POST /api/bookings?customerId={}&serviceId={}&addressId={}&providerId={}
   createBooking: async (bookingData) => {
-    await delay(300);
-    const provider = mockProviders.find(p => p.id === Number(bookingData.providerId));
-    const newId = `BK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const basePrice = Number(bookingData.price) || 299;
-    const tax = +(basePrice * 0.18).toFixed(2);
-    const totalPrice = +(basePrice + tax).toFixed(2);
+    try {
+      const customerId = bookingData.customerId || 4;
+      const serviceId = bookingData.serviceId || 1;
+      const addressId = bookingData.addressId;
+      const providerId = bookingData.providerId;
 
-    const newBooking = {
-      id: newId,
-      customerId: bookingData.customerId || 1,
-      customerName: bookingData.customerName || "Aarav Sharma",
-      customerPhone: bookingData.customerPhone || "+91 98201 12345",
-      customerEmail: bookingData.customerEmail || "customer@trustfix.com",
-      providerId: provider?.id || 101,
-      providerName: provider?.name || "Rajesh Kumar",
-      providerPhone: provider?.phone || "+91 98202 23456",
-      providerAvatar: provider?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
-      serviceId: bookingData.serviceId,
-      serviceName: bookingData.serviceName || "Home Repair Service",
-      categoryName: provider?.service || "General",
-      date: bookingData.date,
-      time: bookingData.time,
-      status: "PENDING",
-      price: basePrice,
-      tax: tax,
-      totalPrice: totalPrice,
-      paymentStatus: "PENDING_POST_SERVICE",
-      address: bookingData.address,
-      latitude: bookingData.latitude || 19.1294,
-      longitude: bookingData.longitude || 72.8752,
-      description: bookingData.description || "General inspection requested",
-      createdAt: new Date().toISOString(),
-      timeline: [
-        { 
-          step: "Booking Created", 
-          time: new Date().toLocaleString(), 
-          done: true, 
-          desc: "Booking request submitted by customer." 
-        },
-        { 
-          step: "Provider Accepted", 
-          time: "Awaiting confirmation", 
-          done: false, 
-          desc: `Waiting for ${provider?.name || 'Provider'} to accept.` 
-        },
-        { 
-          step: "Service In Progress", 
-          time: "Pending", 
-          done: false, 
-          desc: "Technician arrives at location." 
-        },
-        { 
-          step: "Completed & Verified", 
-          time: "Pending", 
-          done: false, 
-          desc: "Service completed, inspected, and verified." 
-        }
-      ]
-    };
-
-    bookingsState.unshift(newBooking);
-    return newBooking;
-  },
-
-  getCustomerBookings: async (customerId, statusFilter = 'ALL') => {
-    await delay();
-    let result = bookingsState.filter(b => b.customerId === Number(customerId) || customerId === 1);
-    if (statusFilter && statusFilter !== 'ALL') {
-      result = result.filter(b => b.status === statusFilter);
-    }
-    return result;
-  },
-
-  getProviderBookings: async (providerId, statusFilter = 'ALL') => {
-    await delay();
-    let result = bookingsState.filter(b => b.providerId === Number(providerId) || providerId === 101);
-    if (statusFilter && statusFilter !== 'ALL') {
-      result = result.filter(b => b.status === statusFilter);
-    }
-    return result;
-  },
-
-  getBookingById: async (id) => {
-    await delay();
-    const booking = bookingsState.find(b => b.id === id);
-    if (!booking) throw new Error(`Booking ${id} not found`);
-    return { ...booking };
-  },
-
-  updateBookingStatus: async (id, newStatus) => {
-    await delay(180);
-    bookingsState = bookingsState.map(b => {
-      if (b.id === id) {
-        const updatedTimeline = [...b.timeline];
-        const nowStr = new Date().toLocaleString();
-        
-        if (newStatus === 'CONFIRMED') {
-          updatedTimeline[1] = { step: "Provider Accepted", time: nowStr, done: true, desc: "Provider accepted the appointment." };
-        } else if (newStatus === 'IN_PROGRESS') {
-          updatedTimeline[1] = { ...updatedTimeline[1], done: true };
-          updatedTimeline[2] = { step: "Service In Progress", time: nowStr, done: true, desc: "Technician arrived and began service." };
-        } else if (newStatus === 'COMPLETED') {
-          updatedTimeline[1] = { ...updatedTimeline[1], done: true };
-          updatedTimeline[2] = { ...updatedTimeline[2], done: true };
-          updatedTimeline[3] = { step: "Completed & Verified", time: nowStr, done: true, desc: "Job completed and verified." };
-        } else if (newStatus === 'CANCELLED') {
-          updatedTimeline.push({ step: "Booking Cancelled", time: nowStr, done: true, desc: "Booking was cancelled." });
-        }
-
-        return {
-          ...b,
-          status: newStatus,
-          paymentStatus: newStatus === 'COMPLETED' ? 'PAID' : b.paymentStatus,
-          timeline: updatedTimeline,
-          completedAt: newStatus === 'COMPLETED' ? new Date().toISOString() : b.completedAt
-        };
+      if (!addressId || addressId === 'undefined' || addressId === 'null') {
+        throw new Error('Valid address selection is required to create a booking.');
       }
-      return b;
-    });
 
-    return bookingsState.find(b => b.id === id);
+      let url = `/bookings?customerId=${customerId}&serviceId=${serviceId}&addressId=${addressId}`;
+      if (providerId && providerId !== 'undefined' && providerId !== 'null' && Number(providerId) > 0) {
+        url += `&providerId=${providerId}`;
+      }
+
+      const body = {
+        bookingDate: bookingData.date || new Date().toISOString().split('T')[0],
+        bookingTime: formatToTime(bookingData.time),
+        totalAmount: bookingData.price || bookingData.totalAmount || undefined,
+        notes: bookingData.description || bookingData.notes || 'Service appointment requested',
+      };
+
+      const response = await apiClient.post(url, body);
+      return mapBookingResponse(response.data);
+    } catch (error) {
+      console.error('[bookingService] Error creating booking:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to create booking.';
+      throw new Error(errorMsg);
+    }
   },
 
-  cancelBooking: async (id, reason = "Customer request") => {
-    await delay(150);
-    return bookingService.updateBookingStatus(id, 'CANCELLED');
-  }
+  // Real API get customer bookings using GET /api/bookings/customer/{customerId}
+  getCustomerBookings: async (customerId, statusFilter = 'ALL') => {
+    if (!customerId || customerId === 'undefined' || customerId === 'null') {
+      return [];
+    }
+    try {
+      const response = await apiClient.get(`/bookings/customer/${customerId}`);
+      let list = Array.isArray(response.data) ? response.data.map(mapBookingResponse) : [];
+
+      if (statusFilter && statusFilter !== 'ALL') {
+        list = list.filter((b) => b.status === statusFilter);
+      }
+      return list;
+    } catch (error) {
+      console.error(`[bookingService] Error fetching bookings for customer ${customerId}:`, error);
+      throw error;
+    }
+  },
+
+  // Real API get provider bookings using GET /api/bookings/provider/{providerId}
+  getProviderBookings: async (providerId, statusFilter = 'ALL') => {
+    if (!providerId || providerId === 'undefined' || providerId === 'null') {
+      return [];
+    }
+    try {
+      const response = await apiClient.get(`/bookings/provider/${providerId}`);
+      let list = Array.isArray(response.data) ? response.data.map(mapBookingResponse) : [];
+
+      if (statusFilter && statusFilter !== 'ALL') {
+        list = list.filter((b) => b.status === statusFilter);
+      }
+      return list;
+    } catch (error) {
+      console.error(`[bookingService] Error fetching bookings for provider ${providerId}:`, error);
+      return [];
+    }
+  },
+
+  // Real API get booking by ID using GET /api/bookings/{id}
+  getBookingById: async (id) => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Booking ID is required');
+    }
+    try {
+      const response = await apiClient.get(`/bookings/${id}`);
+      return mapBookingResponse(response.data);
+    } catch (error) {
+      console.error(`[bookingService] Error fetching booking ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Real API cancel booking using PUT /api/bookings/{id}/status?status=CANCELLED
+  cancelBooking: async (id, reason = 'Customer request') => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Booking ID is required');
+    }
+    try {
+      const response = await apiClient.put(`/bookings/${id}/status?status=CANCELLED`);
+      return mapBookingResponse(response.data);
+    } catch (error) {
+      console.error(`[bookingService] Error cancelling booking ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Real API update status using PUT /api/bookings/{id}/status?status={status}
+  updateBookingStatus: async (id, newStatus) => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Valid Booking ID is required');
+    }
+    try {
+      const response = await apiClient.put(`/bookings/${id}/status?status=${newStatus}`);
+      return mapBookingResponse(response.data);
+    } catch (error) {
+      console.error(`[bookingService] Error updating status for booking ${id}:`, error);
+      throw error;
+    }
+  },
 };

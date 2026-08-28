@@ -19,8 +19,22 @@ export const ProviderDashboard = () => {
   const fetchProviderData = async () => {
     setLoading(true);
     try {
-      const data = await bookingService.getProviderBookings(providerProfile?.id || 101);
+      let activeProfile = providerProfile;
+      if (!activeProfile && user?.id) {
+        try {
+          activeProfile = await providerService.getProviderByUserId(user.id);
+          updateProvider(activeProfile);
+        } catch (e) {
+          console.warn('Could not resolve provider profile:', e);
+        }
+      }
+
+      const targetId = activeProfile?.id || 1;
+      const data = await bookingService.getProviderBookings(targetId);
       setBookings(data);
+    } catch (err) {
+      console.error('Failed to fetch provider dashboard data:', err);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -28,34 +42,44 @@ export const ProviderDashboard = () => {
 
   useEffect(() => {
     fetchProviderData();
-  }, [providerProfile]);
+  }, [user, providerProfile?.id]);
 
   const handleToggleAvailability = async () => {
-    if (!providerProfile) return;
+    if (!providerProfile?.id) return;
     setToggling(true);
     try {
-      const newAvail = await providerService.toggleAvailability(providerProfile.id);
+      const newAvail = await providerService.toggleAvailability(providerProfile.id, providerProfile.available);
       updateProvider({ available: newAvail });
+    } catch (err) {
+      console.error('Error toggling availability:', err);
     } finally {
       setToggling(false);
     }
   };
 
   const handleAcceptRequest = async (bookingId) => {
-    await bookingService.updateBookingStatus(bookingId, 'CONFIRMED');
-    fetchProviderData();
+    try {
+      await bookingService.updateBookingStatus(bookingId, 'CONFIRMED');
+      fetchProviderData();
+    } catch (err) {
+      console.error('Error accepting booking:', err);
+    }
   };
 
   const handleRejectRequest = async (bookingId) => {
-    await bookingService.updateBookingStatus(bookingId, 'CANCELLED');
-    fetchProviderData();
+    try {
+      await bookingService.updateBookingStatus(bookingId, 'CANCELLED');
+      fetchProviderData();
+    } catch (err) {
+      console.error('Error rejecting booking:', err);
+    }
   };
 
   const pendingRequests = bookings.filter(b => b.status === 'PENDING');
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
   const inProgressBookings = bookings.filter(b => b.status === 'IN_PROGRESS' || b.status === 'CONFIRMED');
 
-  const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.price || 0), 0);
+  const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.price || b.totalPrice || 0), 0);
 
   return (
     <div className="provider-dashboard">

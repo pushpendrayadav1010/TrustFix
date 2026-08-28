@@ -27,8 +27,12 @@ export const MyBookingsPage = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const data = await bookingService.getCustomerBookings(user?.id || 1, statusFilter);
+      const customerId = user?.id || 4;
+      const data = await bookingService.getCustomerBookings(customerId, statusFilter);
       setBookings(data);
+    } catch (err) {
+      console.error('Failed to fetch bookings:', err);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -56,7 +60,7 @@ export const MyBookingsPage = () => {
         providerId: selectedBookingForReview.providerId,
         rating: reviewRating,
         comment: reviewComment,
-        customerName: user?.name || "Aarav Sharma",
+        customerName: user?.name || "Customer",
         serviceName: selectedBookingForReview.serviceName
       });
       setReviewModalOpen(false);

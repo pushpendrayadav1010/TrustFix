@@ -1,44 +1,87 @@
-import { mockCategories } from '../mock/categories';
-import { mockServices } from '../mock/services';
-
-const delay = (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
+import apiClient from './api';
 
 export const categoryService = {
+  // =========================
+  // GET ALL CATEGORIES
+  // =========================
   getCategories: async () => {
-    await delay();
-    return [...mockCategories];
+    const response = await apiClient.get('/categories');
+    return response.data.map((category) => ({
+      id: category.id,
+      name: category.name,
+      icon: category.iconUrl || '🔧',
+      description: category.description,
+      active: category.active !== false,
+    }));
   },
 
-  getCategoryBySlug: async (slug) => {
-    await delay();
-    const category = mockCategories.find(c => c.slug === slug || c.name.toLowerCase() === slug.toLowerCase());
-    return category || null;
-  },
-
+  // =========================
+  // GET SERVICES BY CATEGORY ID OR ALL
+  // =========================
   getServices: async (filters = {}) => {
-    await delay();
-    let result = [...mockServices];
-    if (filters.categorySlug) {
-      const cat = mockCategories.find(c => c.slug === filters.categorySlug);
-      if (cat) {
-        result = result.filter(s => s.categoryId === cat.id);
-      }
+    let url = '/services/active';
+
+    if (
+      filters.categoryId !== undefined &&
+      filters.categoryId !== null &&
+      filters.categoryId !== '' &&
+      filters.categoryId !== 'all'
+    ) {
+      url = `/services/category/${filters.categoryId}`;
     }
+
+    const response = await apiClient.get(url);
+    let result = Array.isArray(response.data) ? response.data : [];
+
+    // Search filter
     if (filters.search) {
-      const q = filters.search.toLowerCase();
-      result = result.filter(s => 
-        s.name.toLowerCase().includes(q) || 
-        s.categoryName.toLowerCase().includes(q) ||
-        s.shortDescription.toLowerCase().includes(q)
+      const q = filters.search.toLowerCase().trim();
+      result = result.filter(
+        (service) =>
+          service.name?.toLowerCase().includes(q) ||
+          service.description?.toLowerCase().includes(q) ||
+          service.categoryName?.toLowerCase().includes(q)
       );
     }
-    return result;
+
+    return result.map((service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      shortDescription: service.description,
+      basePrice: service.basePrice,
+      price: service.basePrice,
+      durationInMinutes: service.durationInMinutes,
+      categoryId: service.categoryId,
+      categoryName: service.categoryName,
+      imageUrl: service.imageUrl,
+      active: service.active,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt,
+    }));
   },
 
+  // =========================
+  // GET SERVICE BY ID
+  // =========================
   getServiceById: async (id) => {
-    await delay();
-    const service = mockServices.find(s => s.id === Number(id));
-    if (!service) throw new Error(`Service not found with ID ${id}`);
-    return { ...service };
-  }
+    const response = await apiClient.get(`/services/${id}`);
+    const service = response.data;
+
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      shortDescription: service.description,
+      basePrice: service.basePrice,
+      price: service.basePrice,
+      durationInMinutes: service.durationInMinutes,
+      categoryId: service.categoryId,
+      categoryName: service.categoryName,
+      imageUrl: service.imageUrl,
+      active: service.active,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt,
+    };
+  },
 };

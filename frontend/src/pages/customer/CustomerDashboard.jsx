@@ -43,7 +43,7 @@ export const CustomerDashboard = () => {
   return (
     <div className="customer-dashboard">
       <DashboardHeader
-        title={`Hello, ${user?.name?.split(' ')[0] || 'Aarav'} 👋`}
+        title={`Hello, ${user?.name?.split(' ')[0] || 'User'} 👋`}
         subtitle="Manage your home services, track active appointments, and discover verified local pros."
       />
 

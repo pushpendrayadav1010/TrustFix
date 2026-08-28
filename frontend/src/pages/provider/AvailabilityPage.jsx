@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { providerService } from '../../services/providerService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { Button } from '../../components/common/Button';
 
 export const AvailabilityPage = () => {
-  const { providerProfile, updateProvider } = useAuth();
+  const { user, providerProfile, updateProvider } = useAuth();
   const [isAvailable, setIsAvailable] = useState(providerProfile?.available ?? true);
   
   const allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const [workingDays, setWorkingDays] = useState(providerProfile?.workingDays || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
   
   const [workingHours, setWorkingHours] = useState(providerProfile?.workingHours || "08:00 AM - 08:00 PM");
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (providerProfile?.available !== undefined) {
+      setIsAvailable(providerProfile.available);
+    }
+  }, [providerProfile?.available]);
 
   const handleDayToggle = (day) => {
     if (workingDays.includes(day)) {
@@ -21,15 +29,34 @@ export const AvailabilityPage = () => {
     }
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    updateProvider({
-      available: isAvailable,
-      workingDays,
-      workingHours,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      let targetId = providerProfile?.id;
+      if (!targetId && user?.id) {
+        const fetched = await providerService.getProviderByUserId(user.id);
+        targetId = fetched.id;
+      }
+
+      if (targetId) {
+        const updated = await providerService.updateProviderProfile(targetId, {
+          available: isAvailable,
+          workingDays,
+          workingHours
+        });
+        updateProvider(updated);
+      } else {
+        updateProvider({ available: isAvailable, workingDays, workingHours });
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving availability schedule:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

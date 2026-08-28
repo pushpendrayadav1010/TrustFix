@@ -151,7 +151,7 @@ export const LoginPage = () => {
                 className="btn btn-sm btn-light justify-between"
                 onClick={() => handleQuickDemoLogin('CUSTOMER', '/customer/dashboard')}
               >
-                <span>👤 Customer (Aarav Sharma)</span>
+                <span>👤 Customer (Test Customer)</span>
                 <span className="badge badge-confirmed">Instant Access</span>
               </button>
 

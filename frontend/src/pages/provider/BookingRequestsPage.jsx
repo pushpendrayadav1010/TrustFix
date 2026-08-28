@@ -1,21 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { bookingService } from '../../services/bookingService';
+import { providerService } from '../../services/providerService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { BookingCard } from '../../components/booking/BookingCard';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
 
 export const BookingRequestsPage = () => {
-  const { providerProfile } = useAuth();
+  const { user, providerProfile, updateProvider } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState(null);
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const data = await bookingService.getProviderBookings(providerProfile?.id || 101, statusFilter);
+      let activeProfile = providerProfile;
+      if (!activeProfile && user?.id) {
+        activeProfile = await providerService.getProviderByUserId(user.id);
+        updateProvider(activeProfile);
+      }
+
+      const targetId = activeProfile?.id || 1;
+      const data = await bookingService.getProviderBookings(targetId, statusFilter);
       setBookings(data);
+    } catch (err) {
+      console.error('Failed to fetch provider bookings:', err);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -23,16 +35,34 @@ export const BookingRequestsPage = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [providerProfile, statusFilter]);
+  }, [user, providerProfile?.id, statusFilter]);
 
   const handleAccept = async (id) => {
-    await bookingService.updateBookingStatus(id, 'CONFIRMED');
-    fetchBookings();
+    if (processingId) return;
+    try {
+      setProcessingId(id);
+      await bookingService.updateBookingStatus(id, 'CONFIRMED');
+      await fetchBookings();
+    } catch (err) {
+      console.error('Error confirming booking:', err);
+      alert('Failed to accept booking: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const handleReject = async (id) => {
-    await bookingService.updateBookingStatus(id, 'CANCELLED');
-    fetchBookings();
+    if (processingId) return;
+    try {
+      setProcessingId(id);
+      await bookingService.updateBookingStatus(id, 'CANCELLED');
+      await fetchBookings();
+    } catch (err) {
+      console.error('Error cancelling booking:', err);
+      alert('Failed to decline booking: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const tabs = [
@@ -54,7 +84,7 @@ export const BookingRequestsPage = () => {
         {/* Filter Tabs */}
         <div className="card mb-6" style={{ padding: '0.5rem' }}>
           <div className="flex items-center gap-2 flex-wrap">
-            {tabs.map(t => (
+            {tabs.map((t) => (
               <button
                 key={t.key}
                 type="button"
@@ -77,12 +107,9 @@ export const BookingRequestsPage = () => {
           />
         ) : (
           <div className="flex flex-col gap-4">
-            {bookings.map(b => (
+            {bookings.map((b) => (
               <div key={b.id} className="relative">
-                <BookingCard
-                  booking={b}
-                  role="PROVIDER"
-                />
+                <BookingCard booking={b} role="PROVIDER" />
 
                 {b.status === 'PENDING' && (
                   <div
@@ -108,14 +135,16 @@ export const BookingRequestsPage = () => {
                       <button
                         type="button"
                         className="btn btn-sm btn-success"
+                        disabled={processingId === b.id}
                         onClick={() => handleAccept(b.id)}
                       >
-                        ✓ Accept & Confirm
+                        {processingId === b.id ? 'Processing...' : '✓ Accept & Confirm'}
                       </button>
                       <button
                         type="button"
                         className="btn btn-sm btn-secondary"
                         style={{ color: 'var(--danger-600)' }}
+                        disabled={processingId === b.id}
                         onClick={() => handleReject(b.id)}
                       >
                         ✕ Decline

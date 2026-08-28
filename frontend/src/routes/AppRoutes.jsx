@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { CustomerLayout } from '../layouts/CustomerLayout';
 import { ProviderLayout } from '../layouts/ProviderLayout';
+import { AdminLayout } from '../layouts/AdminLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // Public Pages
@@ -34,7 +35,12 @@ import { ProviderReviewsPage } from '../pages/provider/ProviderReviewsPage';
 import { AvailabilityPage } from '../pages/provider/AvailabilityPage';
 
 // Admin Pages
-import { AdminDashboardPlaceholder } from '../pages/admin/AdminDashboardPlaceholder';
+import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
+import { AdminUsersPage } from '../pages/admin/AdminUsersPage';
+import { AdminProvidersPage } from '../pages/admin/AdminProvidersPage';
+import { AdminCategoriesPage } from '../pages/admin/AdminCategoriesPage';
+import { AdminServicesPage } from '../pages/admin/AdminServicesPage';
+import { AdminBookingsPage } from '../pages/admin/AdminBookingsPage';
 
 export const AppRoutes = () => {
   return (
@@ -91,17 +97,22 @@ export const AppRoutes = () => {
         <Route path="availability" element={<AvailabilityPage />} />
       </Route>
 
-      {/* Admin Protected Placeholder Routes */}
+      {/* Admin Protected Routes */}
       <Route
         path="/admin"
         element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <PublicLayout />
+            <AdminLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboardPlaceholder />} />
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="providers" element={<AdminProvidersPage />} />
+        <Route path="categories" element={<AdminCategoriesPage />} />
+        <Route path="services" element={<AdminServicesPage />} />
+        <Route path="bookings" element={<AdminBookingsPage />} />
       </Route>
 
       {/* Wildcard Fallback */}

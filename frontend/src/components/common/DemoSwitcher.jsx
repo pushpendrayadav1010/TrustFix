@@ -54,7 +54,7 @@ export const DemoSwitcher = () => {
               onClick={() => handleSelect('CUSTOMER', '/customer/dashboard')}
             >
               <span>👤 Customer</span>
-              <span className="text-xs text-muted">Aarav S.</span>
+              <span className="text-xs text-muted">Test Customer</span>
             </button>
 
             <button
@@ -77,8 +77,8 @@ export const DemoSwitcher = () => {
               className={`btn btn-sm ${role === 'ADMIN' ? 'btn-primary' : 'btn-secondary'} justify-between`}
               onClick={() => handleSelect('ADMIN', '/admin/dashboard')}
             >
-              <span>🛡️ Admin Placeholder</span>
-              <span className="text-xs text-muted">Officer</span>
+              <span>🛡️ System Admin</span>
+              <span className="text-xs text-muted">admin@trustfix.com</span>
             </button>
 
             <div style={{ borderTop: '1px solid var(--neutral-200)', marginTop: '4px', paddingTop: '6px' }} className="flex justify-between items-center">

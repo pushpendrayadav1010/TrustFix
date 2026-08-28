@@ -10,16 +10,16 @@ import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStat
 import { formatCurrency } from '../../utils/formatters';
 
 export const MyServicesPage = () => {
-  const { providerProfile } = useAuth();
+  const { user, providerProfile, updateProvider } = useAuth();
   const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [catalogServices, setCatalogServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Add Service Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    item: '',
-    price: '',
+    serviceId: '',
+    price: '499',
     type: 'Base Visit',
     description: ''
   });
@@ -27,12 +27,25 @@ export const MyServicesPage = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const [provServices, cats] = await Promise.all([
-        providerService.getProviderServices(providerProfile?.id || 101),
-        categoryService.getCategories()
+      let activeProfile = providerProfile;
+      if (!activeProfile && user?.id) {
+        activeProfile = await providerService.getProviderByUserId(user.id);
+        updateProvider(activeProfile);
+      }
+
+      const targetId = activeProfile?.id || 1;
+      const [provServices, catalog] = await Promise.all([
+        providerService.getProviderServices(targetId),
+        categoryService.getServices()
       ]);
       setServices(provServices || []);
-      setCategories(cats);
+      setCatalogServices(catalog || []);
+      if (catalog && catalog.length > 0) {
+        setFormData(prev => ({ ...prev, serviceId: String(catalog[0].id) }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch provider services:', err);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -40,12 +53,13 @@ export const MyServicesPage = () => {
 
   useEffect(() => {
     fetchServices();
-  }, [providerProfile]);
+  }, [user, providerProfile?.id]);
 
   const handleOpenAdd = () => {
+    const defaultServiceId = catalogServices.length > 0 ? String(catalogServices[0].id) : '1';
     setFormData({
-      item: '',
-      price: '',
+      serviceId: defaultServiceId,
+      price: '499',
       type: 'Base Visit',
       description: ''
     });
@@ -54,21 +68,38 @@ export const MyServicesPage = () => {
 
   const handleAddService = async (e) => {
     e.preventDefault();
-    if (!formData.item || !formData.price) return;
+    if (!formData.serviceId || !formData.price) return;
 
-    await providerService.addProviderService(providerProfile?.id || 101, {
-      item: formData.item,
-      price: Number(formData.price),
-      type: formData.type
-    });
-    setModalOpen(false);
-    fetchServices();
+    try {
+      let targetId = providerProfile?.id;
+      if (!targetId && user?.id) {
+        const fetched = await providerService.getProviderByUserId(user.id);
+        targetId = fetched.id;
+      }
+
+      await providerService.addProviderService(targetId || 1, Number(formData.serviceId), Number(formData.price));
+      setModalOpen(false);
+      fetchServices();
+    } catch (err) {
+      console.error('Error adding provider service:', err);
+    }
   };
 
-  const handleDeleteService = async (item) => {
-    if (window.confirm(`Are you sure you want to remove "${item}" from your services?`)) {
-      await providerService.deleteProviderService(providerProfile?.id || 101, item);
-      fetchServices();
+  const handleDeleteService = async (serv) => {
+    if (window.confirm(`Are you sure you want to remove "${serv.item || serv.serviceName}" from your services?`)) {
+      try {
+        let targetId = providerProfile?.id;
+        if (!targetId && user?.id) {
+          const fetched = await providerService.getProviderByUserId(user.id);
+          targetId = fetched.id;
+        }
+
+        const serviceIdToDelete = serv.serviceId || serv.id;
+        await providerService.deleteProviderService(targetId || 1, serviceIdToDelete);
+        fetchServices();
+      } catch (err) {
+        console.error('Error deleting provider service:', err);
+      }
     }
   };
 
@@ -100,14 +131,14 @@ export const MyServicesPage = () => {
               <div key={idx} className="card card-hoverable flex flex-col justify-between">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="badge badge-confirmed">{serv.type}</span>
+                    <span className="badge badge-confirmed">{serv.type || 'Base Visit'}</span>
                     <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-800)' }}>
                       {formatCurrency(serv.price)}
                     </span>
                   </div>
 
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>
-                    {serv.item}
+                    {serv.item || serv.serviceName}
                   </h4>
 
                   <p className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
@@ -121,7 +152,7 @@ export const MyServicesPage = () => {
                     type="button"
                     className="btn btn-sm btn-secondary"
                     style={{ color: 'var(--danger-600)' }}
-                    onClick={() => handleDeleteService(serv.item)}
+                    onClick={() => handleDeleteService(serv)}
                   >
                     Remove
                   </button>
@@ -144,19 +175,27 @@ export const MyServicesPage = () => {
           }
         >
           <form onSubmit={handleAddService}>
-            <Input
-              label="Service Task Name"
-              placeholder="e.g. Ceiling Fan Installation, Inverter Repair"
-              value={formData.item}
-              onChange={(e) => setFormData(prev => ({ ...prev, item: e.target.value }))}
-              required
-            />
+            <div className="form-group mb-4">
+              <label className="form-label">Select Service Category / Task</label>
+              <select
+                className="form-control"
+                value={formData.serviceId}
+                onChange={(e) => setFormData(prev => ({ ...prev, serviceId: e.target.value }))}
+                required
+              >
+                {catalogServices.map(cs => (
+                  <option key={cs.id} value={cs.id}>
+                    {cs.name} (Base: ₹{cs.basePrice || cs.startingPrice || 499})
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <Input
-                label="Starting Price (₹)"
+                label="Custom Service Price (₹)"
                 type="number"
-                placeholder="299"
+                placeholder="499"
                 value={formData.price}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                 required

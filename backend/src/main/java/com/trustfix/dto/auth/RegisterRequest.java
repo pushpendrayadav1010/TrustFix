@@ -1,6 +1,7 @@
 package com.trustfix.dto.auth;
 
 import com.trustfix.entity.UserRole;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,7 +24,8 @@ public class RegisterRequest {
     @Size(max = 20, message = "Phone number cannot exceed 20 characters")
     private String phone;
 
-    private UserRole role = UserRole.CUSTOMER;
+    @JsonProperty("role")
+    private UserRole role;
 
     public RegisterRequest() {
     }
@@ -72,7 +74,17 @@ public class RegisterRequest {
         return role;
     }
 
-    public void setRole(UserRole role) {
-        this.role = role;
+    public void setRole(Object r) {
+        System.out.println("[RegisterRequest] setRole received: " + r + " (type: " + (r != null ? r.getClass().getName() : "null") + ")");
+        if (r instanceof UserRole) {
+            this.role = (UserRole) r;
+        } else if (r != null) {
+            try {
+                this.role = UserRole.valueOf(r.toString().trim().toUpperCase());
+            } catch (Exception e) {
+                System.out.println("[RegisterRequest] Failed to parse enum: " + e.getMessage());
+                this.role = UserRole.CUSTOMER;
+            }
+        }
     }
 }
