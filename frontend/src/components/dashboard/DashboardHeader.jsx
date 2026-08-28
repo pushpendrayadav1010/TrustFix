@@ -1,0 +1,45 @@
+import React from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
+
+export const DashboardHeader = ({ title, subtitle, actions }) => {
+  const { user, role, providerProfile } = useAuth();
+
+  return (
+    <header className="dashboard-header">
+      <div>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
+          {title}
+        </h2>
+        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+      </div>
+
+      <div className="flex items-center gap-3">
+        {actions}
+
+        {role === 'CUSTOMER' && (
+          <Link to="/customer/browse" className="btn btn-sm btn-primary">
+            + Book Service
+          </Link>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '4px 10px',
+            backgroundColor: 'var(--neutral-100)',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--neutral-200)',
+          }}
+        >
+          <span className={`status-dot ${role === 'PROVIDER' ? (providerProfile?.available ? 'online' : 'offline') : 'online'}`} />
+          <span className="text-xs font-semibold" style={{ color: 'var(--neutral-700)' }}>
+            {user?.name?.split(' ')[0] || 'User'}
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+};
