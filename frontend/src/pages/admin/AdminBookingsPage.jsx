@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { formatCurrency } from '../../utils/formatters';
+import { CheckCircle2, AlertCircle, RotateCw } from 'lucide-react';
 
 export const AdminBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -59,14 +61,16 @@ export const AdminBookingsPage = () => {
       <div className="dashboard-content">
         <div className="container" style={{ maxWidth: '1200px' }}>
           {actionSuccess && (
-            <div className="alert alert-success mb-4" role="alert">
-              ✓ {actionSuccess}
+            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
+              <CheckCircle2 size={18} />
+              <span>{actionSuccess}</span>
             </div>
           )}
 
           {error && (
-            <div className="alert alert-danger mb-4" role="alert">
-              ⚠️ {error}
+            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
@@ -85,8 +89,9 @@ export const AdminBookingsPage = () => {
               ))}
             </div>
 
-            <button className="btn btn-sm btn-outline-primary" onClick={fetchBookings}>
-              🔄 Refresh List
+            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={fetchBookings}>
+              <RotateCw size={13} />
+              <span>Refresh List</span>
             </button>
           </div>
 
@@ -135,7 +140,7 @@ export const AdminBookingsPage = () => {
                           )}
                         </td>
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--primary-700)' }}>
-                          ₹{b.totalAmount}
+                          {formatCurrency(b.totalAmount || b.price)}
                         </td>
                         <td style={{ padding: '0.75rem 1rem' }}>
                           <StatusBadge status={b.status} />

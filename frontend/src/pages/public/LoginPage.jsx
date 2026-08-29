@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { isValidEmail } from '../../utils/validators';
+import { ShieldCheck, User, Wrench, Clock, Shield, AlertCircle, X, Sparkles } from 'lucide-react';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -59,9 +60,17 @@ export const LoginPage = () => {
     }
   };
 
-  const handleQuickDemoLogin = (persona, path) => {
-    switchDemoPersona(persona);
-    navigate(path);
+  const handleQuickDemoLogin = async (persona, path) => {
+    setLoading(true);
+    setAuthError('');
+    try {
+      await switchDemoPersona(persona);
+      navigate(path);
+    } catch (err) {
+      setAuthError('Demo login failed: ' + (err.message || 'Error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,8 +79,8 @@ export const LoginPage = () => {
         
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="brand-icon" style={{ width: '44px', height: '44px', fontSize: '1.4rem', margin: '0 auto 12px auto' }}>
-            🛡️
+          <div className="brand-icon" style={{ width: '48px', height: '48px', margin: '0 auto 12px auto' }}>
+            <ShieldCheck size={26} strokeWidth={2.2} />
           </div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)' }}>
             Welcome back to TrustFix
@@ -85,7 +94,7 @@ export const LoginPage = () => {
         <div className="card" style={{ padding: '2rem' }}>
           {authError && (
             <div className="alert alert-danger mb-4">
-              <span>⚠️</span>
+              <AlertCircle size={18} />
               <span>{authError}</span>
             </div>
           )}
@@ -141,8 +150,9 @@ export const LoginPage = () => {
 
           {/* Quick Demo Credentials Box */}
           <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--neutral-200)', paddingTop: '1.25rem' }}>
-            <span className="text-xs text-muted block font-semibold mb-2 text-center">
-              ⚡ Instant Demo Logins (One-Click Testing)
+            <span className="text-xs text-muted block font-semibold mb-2 text-center flex items-center justify-center gap-1">
+              <Sparkles size={13} color="var(--primary-700)" />
+              Instant Demo Logins (One-Click Testing)
             </span>
 
             <div className="flex flex-col gap-2">
@@ -151,7 +161,10 @@ export const LoginPage = () => {
                 className="btn btn-sm btn-light justify-between"
                 onClick={() => handleQuickDemoLogin('CUSTOMER', '/customer/dashboard')}
               >
-                <span>👤 Customer (Test Customer)</span>
+                <span className="flex items-center gap-2">
+                  <User size={14} />
+                  <span>Customer (Test Customer)</span>
+                </span>
                 <span className="badge badge-confirmed">Instant Access</span>
               </button>
 
@@ -160,8 +173,11 @@ export const LoginPage = () => {
                 className="btn btn-sm btn-light justify-between"
                 onClick={() => handleQuickDemoLogin('PROVIDER_VERIFIED', '/provider/dashboard')}
               >
-                <span>🛠️ Verified Provider (Rajesh Kumar)</span>
-                <span className="badge badge-verified">✓ Verified</span>
+                <span className="flex items-center gap-2">
+                  <Wrench size={14} />
+                  <span>Verified Provider (Rajesh Kumar)</span>
+                </span>
+                <span className="badge badge-verified">Verified</span>
               </button>
 
               <button
@@ -169,8 +185,23 @@ export const LoginPage = () => {
                 className="btn btn-sm btn-light justify-between"
                 onClick={() => handleQuickDemoLogin('PROVIDER_PENDING', '/provider/dashboard')}
               >
-                <span>⏳ Pending Provider (Anand Verma)</span>
+                <span className="flex items-center gap-2">
+                  <Clock size={14} />
+                  <span>Pending Provider (Anand Verma)</span>
+                </span>
                 <span className="badge badge-pending">Pending Review</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-sm btn-light justify-between"
+                onClick={() => handleQuickDemoLogin('ADMIN', '/admin/dashboard')}
+              >
+                <span className="flex items-center gap-2">
+                  <Shield size={14} />
+                  <span>System Admin (admin@trustfix.com)</span>
+                </span>
+                <span className="badge" style={{ backgroundColor: '#f3e8ff', color: '#6b21a8' }}>Platform Admin</span>
               </button>
             </div>
           </div>
@@ -184,13 +215,15 @@ export const LoginPage = () => {
           </div>
         </div>
 
-        {/* Forgot Password Placeholder Modal */}
+        {/* Forgot Password Modal */}
         {forgotModalOpen && (
           <div className="modal-backdrop" onClick={() => setForgotModalOpen(false)}>
             <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h4>Reset Password</h4>
-                <button className="btn-close" onClick={() => setForgotModalOpen(false)}>✕</button>
+                <button className="btn-close" onClick={() => setForgotModalOpen(false)}>
+                  <X size={16} />
+                </button>
               </div>
               <div className="modal-body">
                 <p className="text-sm text-muted mb-4">

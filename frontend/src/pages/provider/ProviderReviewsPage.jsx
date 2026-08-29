@@ -5,6 +5,7 @@ import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { RatingStars } from '../../components/common/RatingStars';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
 import { formatDate } from '../../utils/formatters';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const ProviderReviewsPage = () => {
   const { providerProfile } = useAuth();
@@ -106,9 +107,13 @@ export const ProviderReviewsPage = () => {
                   borderRadius: 'var(--radius-md)',
                   fontSize: '12px',
                   color: 'var(--success-800)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                ✓ Maintain a 4.5+ rating to retain Verified Top Provider badge priority.
+                <ShieldCheck size={16} color="var(--success-600)" />
+                <span>Maintain a 4.5+ rating to retain Verified Top Provider badge priority.</span>
               </div>
             </div>
 
@@ -140,7 +145,10 @@ export const ProviderReviewsPage = () => {
                             style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
                           />
                           <strong className="text-sm">{rev.customerName}</strong>
-                          <span className="badge badge-verified" style={{ fontSize: '10px' }}>✓ Verified Job</span>
+                          <span className="badge badge-verified" style={{ fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <CheckCircle2 size={10} />
+                            Verified Job
+                          </span>
                         </div>
                         <span className="text-xs text-muted">{formatDate(rev.date)}</span>
                       </div>

@@ -6,6 +6,7 @@ import { categoryService } from '../../services/categoryService';
 import { ProviderCard } from '../../components/provider/ProviderCard';
 import { MapView } from '../../components/map/MapView';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { Columns, List, Map, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 
 export const BrowseProvidersPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -99,7 +100,8 @@ export const BrowseProvidersPage = () => {
               onClick={() => setViewMode('split')}
               title="Split List and Map"
             >
-              📑 Split View
+              <Columns size={14} />
+              <span>Split View</span>
             </button>
             <button
               type="button"
@@ -107,7 +109,8 @@ export const BrowseProvidersPage = () => {
               onClick={() => setViewMode('list')}
               title="List Only"
             >
-              📋 List
+              <List size={14} />
+              <span>List</span>
             </button>
             <button
               type="button"
@@ -115,7 +118,8 @@ export const BrowseProvidersPage = () => {
               onClick={() => setViewMode('map')}
               title="Map Only"
             >
-              🗺️ Map
+              <Map size={14} />
+              <span>Map</span>
             </button>
           </div>
         </div>
@@ -144,7 +148,7 @@ export const BrowseProvidersPage = () => {
               >
                 <option value="">All Categories</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>{c.name}</option>
+                  <option key={c.id} value={c.name}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -157,9 +161,9 @@ export const BrowseProvidersPage = () => {
                 onChange={(e) => setMinRating(e.target.value)}
               >
                 <option value="0">All Ratings</option>
-                <option value="4.5">★ 4.5 & Above</option>
-                <option value="4.8">★ 4.8 & Above</option>
-                <option value="4.9">★ 4.9 & Above</option>
+                <option value="4.5">4.5 & Above</option>
+                <option value="4.8">4.8 & Above</option>
+                <option value="4.9">4.9 & Above</option>
               </select>
             </div>
 
@@ -194,16 +198,19 @@ export const BrowseProvidersPage = () => {
                   checked={verifiedOnly}
                   onChange={(e) => setVerifiedOnly(e.target.checked)}
                 />
-                <span style={{ color: 'var(--success-700)' }}>✓ Verified Only</span>
+                <span style={{ color: 'var(--success-700)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  <ShieldCheck size={12} /> Verified Only
+                </span>
               </label>
             </div>
 
             <button
               type="button"
-              className="btn btn-sm btn-light text-xs"
+              className="btn btn-sm btn-light text-xs flex items-center gap-1"
               onClick={handleClearFilters}
             >
-              Reset
+              <RotateCcw size={12} />
+              <span>Reset</span>
             </button>
           </div>
         </div>
@@ -213,7 +220,7 @@ export const BrowseProvidersPage = () => {
           <LoadingSpinner message="Locating providers in your area..." />
         ) : providers.length === 0 ? (
           <EmptyState
-            icon="🔍"
+            icon={Search}
             title="No verified providers match your filters"
             description="Try resetting some filters or searching for another home service category."
             action={
@@ -251,7 +258,7 @@ export const BrowseProvidersPage = () => {
 
             {/* List Only */}
             {viewMode === 'list' && (
-              <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+              <div className="providers-grid">
                 {providers.map((p) => (
                   <ProviderCard
                     key={p.id}

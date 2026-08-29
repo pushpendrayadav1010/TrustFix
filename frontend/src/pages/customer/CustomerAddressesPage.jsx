@@ -5,6 +5,7 @@ import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
+import { MapPin, Plus, Edit2, Trash2 } from 'lucide-react';
 
 export const CustomerAddressesPage = () => {
   const { user } = useAuth();
@@ -96,7 +97,10 @@ export const CustomerAddressesPage = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const userId = user?.id || 4;
+      const userId = user?.id;
+      if (!userId) {
+        throw new Error('User session not authenticated');
+      }
       if (editingAddress) {
         await userService.updateAddress(editingAddress.id, formData);
       } else {
@@ -124,8 +128,9 @@ export const CustomerAddressesPage = () => {
             <p className="text-xs text-muted">Manage service delivery locations and default home coordinates for verified technician dispatch.</p>
           </div>
 
-          <Button variant="primary" onClick={handleOpenAdd}>
-            + Add New Address
+          <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
+            <Plus size={16} />
+            <span>Add New Address</span>
           </Button>
         </div>
 
@@ -139,7 +144,20 @@ export const CustomerAddressesPage = () => {
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '1.25rem' }}>📍</span>
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: 'var(--primary-50)',
+                          color: 'var(--primary-700)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <MapPin size={16} />
+                      </div>
                       <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
                         {addr.label}
                       </h4>
@@ -179,17 +197,19 @@ export const CustomerAddressesPage = () => {
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(addr)}
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-secondary flex items-center gap-1"
                   >
-                    Edit
+                    <Edit2 size={12} />
+                    <span>Edit</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(addr.id)}
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-secondary flex items-center gap-1"
                     style={{ color: 'var(--danger-600)' }}
                   >
-                    Delete
+                    <Trash2 size={12} />
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>

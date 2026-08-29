@@ -5,6 +5,7 @@ import { categoryService } from '../../services/categoryService';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { isValidEmail, isValidPhone } from '../../utils/validators';
+import { ShieldCheck, User, Wrench, AlertCircle, Info } from 'lucide-react';
 
 export const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -95,8 +96,8 @@ export const RegisterPage = () => {
         
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="brand-icon" style={{ width: '44px', height: '44px', fontSize: '1.4rem', margin: '0 auto 12px auto' }}>
-            🛡️
+          <div className="brand-icon" style={{ width: '48px', height: '48px', margin: '0 auto 12px auto' }}>
+            <ShieldCheck size={26} strokeWidth={2.2} />
           </div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)' }}>
             Join TrustFix Today
@@ -110,7 +111,7 @@ export const RegisterPage = () => {
         <div className="card" style={{ padding: '2rem' }}>
           {authError && (
             <div className="alert alert-danger mb-4">
-              <span>⚠️</span>
+              <AlertCircle size={18} />
               <span>{authError}</span>
             </div>
           )}
@@ -124,7 +125,8 @@ export const RegisterPage = () => {
                 className={`btn ${formData.role === 'CUSTOMER' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setFormData(prev => ({ ...prev, role: 'CUSTOMER' }))}
               >
-                👤 Customer / Homeowner
+                <User size={15} />
+                <span>Customer</span>
               </button>
 
               <button
@@ -132,7 +134,8 @@ export const RegisterPage = () => {
                 className={`btn ${formData.role === 'PROVIDER' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setFormData(prev => ({ ...prev, role: 'PROVIDER' }))}
               >
-                🛠️ Service Provider
+                <Wrench size={15} />
+                <span>Service Provider</span>
               </button>
             </div>
           </div>
@@ -206,13 +209,14 @@ export const RegisterPage = () => {
                     onChange={handleChange}
                   />
                 </div>
-                <span className="text-xs text-muted block mt-2">
-                  ℹ️ Your account will start in <strong>Pending Verification</strong> status until credentials review.
+                <span className="text-xs text-muted block mt-2 flex items-center gap-1">
+                  <Info size={13} color="var(--primary-700)" />
+                  <span>Your account starts in <strong>Pending Verification</strong> status until credentials review.</span>
                 </span>
               </div>
             )}
 
-            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <Input
                 label="Password"
                 name="password"

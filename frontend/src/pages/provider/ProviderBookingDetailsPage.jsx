@@ -7,6 +7,7 @@ import { BookingTimeline } from '../../components/booking/BookingTimeline';
 import { MapView } from '../../components/map/MapView';
 import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { Calendar, Clock, Check, X, PlayCircle, Phone, Mail, MapPin, CreditCard, ChevronRight } from 'lucide-react';
 
 export const ProviderBookingDetailsPage = () => {
   const { bookingId } = useParams();
@@ -69,8 +70,11 @@ export const ProviderBookingDetailsPage = () => {
                 </h2>
                 <StatusBadge status={booking.status} />
               </div>
-              <p className="text-xs text-muted">
-                Customer: <strong>{booking.customerName}</strong> ({booking.customerPhone}) • 📅 <strong>{formatDate(booking.date)} at {booking.time}</strong>
+              <p className="text-xs text-muted flex items-center gap-1 flex-wrap">
+                <span>Customer: <strong>{booking.customerName}</strong> ({booking.customerPhone})</span>
+                <span>•</span>
+                <Calendar size={12} color="var(--primary-700)" />
+                <span><strong>{formatDate(booking.date)} at {booking.time}</strong></span>
               </p>
             </div>
 
@@ -80,20 +84,22 @@ export const ProviderBookingDetailsPage = () => {
                 <>
                   <button
                     type="button"
-                    className="btn btn-sm btn-success"
+                    className="btn btn-sm btn-success flex items-center gap-1"
                     onClick={() => handleUpdateStatus('CONFIRMED')}
                     disabled={actionLoading}
                   >
-                    ✓ Accept Job
+                    <Check size={14} />
+                    <span>Accept Job</span>
                   </button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-secondary flex items-center gap-1"
                     style={{ color: 'var(--danger-600)' }}
                     onClick={() => handleUpdateStatus('CANCELLED')}
                     disabled={actionLoading}
                   >
-                    ✕ Decline Job
+                    <X size={14} />
+                    <span>Decline Job</span>
                   </button>
                 </>
               )}
@@ -101,22 +107,24 @@ export const ProviderBookingDetailsPage = () => {
               {booking.status === 'CONFIRMED' && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-primary flex items-center gap-1"
                   onClick={() => handleUpdateStatus('IN_PROGRESS')}
                   disabled={actionLoading}
                 >
-                  🚀 Arrived at Site & Start Work
+                  <PlayCircle size={14} />
+                  <span>Arrived & Start Work</span>
                 </button>
               )}
 
               {booking.status === 'IN_PROGRESS' && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-success"
+                  className="btn btn-sm btn-success flex items-center gap-1"
                   onClick={() => handleUpdateStatus('COMPLETED')}
                   disabled={actionLoading}
                 >
-                  ✓ Mark Work Completed
+                  <Check size={14} />
+                  <span>Mark Work Completed</span>
                 </button>
               )}
 
@@ -139,7 +147,7 @@ export const ProviderBookingDetailsPage = () => {
                 Customer & Contact
               </h4>
 
-              <div className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-3 text-sm">
                 <div>
                   <span className="text-muted block text-xs">Customer Name</span>
                   <strong style={{ color: 'var(--neutral-900)' }}>{booking.customerName}</strong>
@@ -147,20 +155,24 @@ export const ProviderBookingDetailsPage = () => {
 
                 <div>
                   <span className="text-muted block text-xs">Direct Phone</span>
-                  <a href={`tel:${booking.customerPhone}`} style={{ fontWeight: 700, color: 'var(--primary-700)' }}>
-                    📞 {booking.customerPhone}
+                  <a href={`tel:${booking.customerPhone}`} className="font-bold flex items-center gap-1" style={{ color: 'var(--primary-700)' }}>
+                    <Phone size={13} />
+                    <span>{booking.customerPhone}</span>
                   </a>
                 </div>
 
                 <div>
                   <span className="text-muted block text-xs">Email</span>
-                  <span>{booking.customerEmail}</span>
+                  <span className="flex items-center gap-1">
+                    <Mail size={13} color="var(--neutral-500)" />
+                    <span>{booking.customerEmail}</span>
+                  </span>
                 </div>
 
                 {booking.description && (
                   <div style={{ marginTop: '0.5rem' }}>
                     <span className="text-muted block text-xs font-semibold">Problem Reported by Customer:</span>
-                    <p className="text-xs text-muted p-2 bg-neutral-50 rounded border" style={{ backgroundColor: 'var(--neutral-50)', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', marginTop: '4px' }}>
+                    <p className="text-xs text-muted" style={{ backgroundColor: 'var(--neutral-50)', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', marginTop: '4px' }}>
                       "{booking.description}"
                     </p>
                   </div>
@@ -173,8 +185,9 @@ export const ProviderBookingDetailsPage = () => {
               <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                 Service Destination
               </h4>
-              <p className="text-xs text-muted mb-3">
-                📍 {booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}, ${booking.address.city} - ${booking.address.pincode}` : 'Mumbai'}
+              <p className="text-xs text-muted mb-3 flex items-center gap-1">
+                <MapPin size={13} color="var(--primary-700)" />
+                <span>{booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}, ${booking.address.city} - ${booking.address.pincode}` : 'Mumbai'}</span>
               </p>
 
               <div style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
@@ -247,9 +260,13 @@ export const ProviderBookingDetailsPage = () => {
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '11px',
                   color: 'var(--neutral-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                💵 Collect payment directly via UPI or Cash from the customer once the repair is completed and demonstrated.
+                <CreditCard size={14} color="var(--primary-700)" />
+                <span>Collect payment directly via UPI or Cash from customer after work completion.</span>
               </div>
             </div>
 

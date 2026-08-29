@@ -4,6 +4,7 @@ import { userService } from '../../services/userService';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const CustomerProfilePage = () => {
   const { user, updateUser } = useAuth();
@@ -102,15 +103,15 @@ export const CustomerProfilePage = () => {
 
         <div className="card" style={{ padding: '2rem' }}>
           {error && (
-            <div className="alert alert-danger mb-4">
-              <span>⚠️</span>
+            <div className="alert alert-danger mb-4 flex items-center gap-2">
+              <AlertCircle size={18} />
               <span>{error}</span>
             </div>
           )}
 
           {saved && (
-            <div className="alert alert-success mb-4">
-              <span>✓</span>
+            <div className="alert alert-success mb-4 flex items-center gap-2">
+              <CheckCircle2 size={18} />
               <span>Profile updated successfully!</span>
             </div>
           )}
@@ -168,4 +169,3 @@ export const CustomerProfilePage = () => {
     </div>
   );
 };
-

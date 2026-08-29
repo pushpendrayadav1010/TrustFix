@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../common/Button';
+import { ShieldCheck, Menu, X, User, LogOut, Check } from 'lucide-react';
 
 export const PublicNavbar = () => {
   const { user, isAuthenticated, role, logout } = useAuth();
@@ -24,9 +24,14 @@ export const PublicNavbar = () => {
       <div className="container nav-container">
         {/* Brand Logo */}
         <Link to="/" className="navbar-brand">
-          <div className="brand-icon">🛡️</div>
+          <div className="brand-icon">
+            <ShieldCheck size={20} strokeWidth={2.2} />
+          </div>
           <span>TrustFix</span>
-          <span className="brand-badge">Verified</span>
+          <span className="brand-badge">
+            <Check size={10} strokeWidth={3} />
+            Verified
+          </span>
         </Link>
 
         {/* Desktop Nav Links */}
@@ -53,12 +58,14 @@ export const PublicNavbar = () => {
         {/* Right CTA / User Status */}
         <div className="nav-actions">
           {isAuthenticated && user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Link to={getDashboardPath()} className="btn btn-sm btn-primary">
+                <User size={14} />
                 <span>Dashboard ({role === 'PROVIDER' ? 'Provider' : role === 'ADMIN' ? 'Admin' : 'Customer'})</span>
               </Link>
               <button onClick={handleLogout} className="btn btn-sm btn-secondary" title="Log out">
-                Logout
+                <LogOut size={14} />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           ) : (
@@ -79,7 +86,7 @@ export const PublicNavbar = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? '✕' : '☰'}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
@@ -100,14 +107,14 @@ export const PublicNavbar = () => {
             className="nav-link font-semibold text-lg"
             onClick={() => setMobileMenuOpen(false)}
           >
-            All Services
+            Services
           </NavLink>
           <NavLink
             to="/browse"
             className="nav-link font-semibold text-lg"
             onClick={() => setMobileMenuOpen(false)}
           >
-            Find Verified Providers
+            Find Providers
           </NavLink>
 
           <div style={{ borderTop: '1px solid var(--neutral-200)', paddingTop: '1rem', marginTop: 'auto' }}>
@@ -118,12 +125,14 @@ export const PublicNavbar = () => {
                   className="btn btn-primary btn-block"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <User size={16} />
                   Go to Dashboard
                 </Link>
                 <button
                   onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                   className="btn btn-secondary btn-block"
                 >
+                  <LogOut size={16} />
                   Logout
                 </button>
               </div>

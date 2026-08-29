@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
+import { CheckCircle2, AlertCircle, RotateCw, UserCheck, Shield, User, Wrench } from 'lucide-react';
 
 export const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -71,20 +72,22 @@ export const AdminUsersPage = () => {
       <div className="dashboard-content">
         <div className="container" style={{ maxWidth: '1200px' }}>
           {actionSuccess && (
-            <div className="alert alert-success mb-4" role="alert">
-              ✓ {actionSuccess}
+            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
+              <CheckCircle2 size={18} />
+              <span>{actionSuccess}</span>
             </div>
           )}
 
           {error && (
-            <div className="alert alert-danger mb-4" role="alert">
-              ⚠️ {error}
+            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Filter Bar */}
           <div className="card p-3 mb-4 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-sm">Role Filter:</span>
               <button
                 className={`btn btn-sm ${roleFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
@@ -112,8 +115,9 @@ export const AdminUsersPage = () => {
               </button>
             </div>
 
-            <button className="btn btn-sm btn-outline-primary" onClick={fetchUsers}>
-              🔄 Refresh List
+            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={fetchUsers}>
+              <RotateCw size={13} />
+              <span>Refresh List</span>
             </button>
           </div>
 
@@ -149,9 +153,6 @@ export const AdminUsersPage = () => {
                         <td style={{ padding: '0.75rem 1rem' }}>{u.phone || 'N/A'}</td>
                         <td style={{ padding: '0.75rem 1rem' }}>
                           <span
-                            className={`badge ${
-                              u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : u.role === 'PROVIDER' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                            }`}
                             style={{
                               padding: '0.25rem 0.5rem',
                               borderRadius: '4px',
@@ -181,13 +182,14 @@ export const AdminUsersPage = () => {
                         <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              className="btn btn-sm btn-outline-secondary"
+                              className="btn btn-sm btn-secondary"
                               onClick={() => handleToggleActive(u)}
                             >
                               {u.active ? 'Deactivate' : 'Activate'}
                             </button>
                             <button
-                              className="btn btn-sm btn-outline-danger"
+                              className="btn btn-sm btn-secondary"
+                              style={{ color: 'var(--danger-600)' }}
                               onClick={() => handleDeleteUser(u.id, u.email)}
                             >
                               Delete

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
+import { sanitizeServiceName, sanitizeServiceDescription } from '../../utils/categoryIcons';
+import { formatCurrency } from '../../utils/formatters';
+import { Plus, Edit2, Trash2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 export const AdminServicesPage = () => {
   const [services, setServices] = useState([]);
@@ -64,8 +67,8 @@ export const AdminServicesPage = () => {
   const handleOpenEdit = (svc) => {
     setEditId(svc.id);
     setFormData({
-      name: svc.name || '',
-      description: svc.description || '',
+      name: sanitizeServiceName(svc.name) || '',
+      description: sanitizeServiceDescription(svc.description) || '',
       basePrice: svc.basePrice || 499,
       durationInMinutes: svc.durationInMinutes || 60,
       categoryId: svc.categoryId || (categories.length > 0 ? categories[0].id : ''),
@@ -97,7 +100,7 @@ export const AdminServicesPage = () => {
         setActionSuccess(`Service '${formData.name}' updated successfully.`);
       } else {
         await adminService.createService(formData.categoryId, payload);
-        setActionSuccess(`New Service '${formData.name}' created under Category #${formData.categoryId}.`);
+        setActionSuccess(`New Service '${formData.name}' created.`);
       }
       setShowModal(false);
       fetchData();
@@ -128,22 +131,25 @@ export const AdminServicesPage = () => {
       <div className="dashboard-content">
         <div className="container" style={{ maxWidth: '1200px' }}>
           {actionSuccess && (
-            <div className="alert alert-success mb-4" role="alert">
-              ✓ {actionSuccess}
+            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
+              <CheckCircle2 size={18} />
+              <span>{actionSuccess}</span>
             </div>
           )}
 
           {error && (
-            <div className="alert alert-danger mb-4" role="alert">
-              ⚠️ {error}
+            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Action Bar */}
           <div className="card p-3 mb-4 flex items-center justify-between">
             <h4 style={{ margin: 0, fontWeight: 700 }}>Service Catalog Items</h4>
-            <button className="btn btn-primary" onClick={handleOpenCreate}>
-              + Add New Service
+            <button className="btn btn-primary flex items-center gap-1" onClick={handleOpenCreate}>
+              <Plus size={16} />
+              <span>Add New Service</span>
             </button>
           </div>
 
@@ -175,19 +181,22 @@ export const AdminServicesPage = () => {
                       <tr key={s.id} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>#{s.id}</td>
                         <td style={{ padding: '0.75rem 1rem' }}>
-                          <div className="font-bold text-neutral-900">{s.name}</div>
+                          <div className="font-bold text-neutral-900">{sanitizeServiceName(s.name)}</div>
                           <div className="text-xs text-muted text-truncate" style={{ maxWidth: '280px' }}>
-                            {s.description}
+                            {sanitizeServiceDescription(s.description)}
                           </div>
                         </td>
                         <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600 }}>
                           {s.categoryName || `Category #${s.categoryId}`}
                         </td>
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--primary-700)' }}>
-                          ₹{s.basePrice}
+                          {formatCurrency(s.basePrice)}
                         </td>
                         <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>
-                          {s.durationInMinutes} mins
+                          <span className="flex items-center gap-1 text-muted">
+                            <Clock size={12} />
+                            <span>{s.durationInMinutes} mins</span>
+                          </span>
                         </td>
                         <td style={{ padding: '0.75rem 1rem' }}>
                           <span
@@ -205,11 +214,13 @@ export const AdminServicesPage = () => {
                         </td>
                         <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                           <div className="flex items-center justify-end gap-2">
-                            <button className="btn btn-sm btn-outline-secondary" onClick={() => handleOpenEdit(s)}>
-                              Edit
+                            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={() => handleOpenEdit(s)}>
+                              <Edit2 size={12} />
+                              <span>Edit</span>
                             </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s.id, s.name)}>
-                              Delete
+                            <button className="btn btn-sm btn-secondary flex items-center gap-1" style={{ color: 'var(--danger-600)' }} onClick={() => handleDelete(s.id, s.name)}>
+                              <Trash2 size={12} />
+                              <span>Delete</span>
                             </button>
                           </div>
                         </td>

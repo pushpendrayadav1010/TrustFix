@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { RatingStars } from '../common/RatingStars';
 import { VerificationBadge } from '../common/VerificationBadge';
+import { CategoryIcon } from '../../utils/categoryIcons';
 import { formatCurrency } from '../../utils/formatters';
 import { Link } from 'react-router-dom';
+import { MapPin, Home, Crosshair, Plus, Minus, X } from 'lucide-react';
 
 export const MapView = ({
   locations = [],
@@ -92,11 +94,14 @@ export const MapView = ({
       {/* Map Header Overlay */}
       <div className="map-header-overlay">
         <div className="location-title">
-          <span>📍</span>
+          <MapPin size={16} color="var(--primary-700)" />
           <span>{center.city || 'Service Area Map'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="mock-pill">🗺️ Mock Map Simulation</span>
+          <span className="mock-pill" style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: 'var(--primary-900)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <MapPin size={12} color="var(--primary-700)" />
+            Mumbai / Thane Service Radius
+          </span>
         </div>
       </div>
 
@@ -104,13 +109,13 @@ export const MapView = ({
       {interactive && (
         <div className="map-controls">
           <button type="button" className="map-control-btn" onClick={handleZoomIn} title="Zoom in">
-            +
+            <Plus size={14} strokeWidth={2.5} />
           </button>
           <button type="button" className="map-control-btn" onClick={handleZoomOut} title="Zoom out">
-            −
+            <Minus size={14} strokeWidth={2.5} />
           </button>
-          <button type="button" className="map-control-btn" onClick={handleReset} title="Recenter map" style={{ fontSize: '12px' }}>
-            🎯
+          <button type="button" className="map-control-btn" onClick={handleReset} title="Recenter map">
+            <Crosshair size={14} strokeWidth={2} />
           </button>
         </div>
       )}
@@ -142,7 +147,7 @@ export const MapView = ({
             title="Your Location"
           >
             <div className="marker-pin customer-pin">
-              <span className="marker-icon">🏠</span>
+              <Home size={14} strokeWidth={2} color="#fff" />
             </div>
           </div>
         )}
@@ -178,14 +183,7 @@ export const MapView = ({
             >
               {loc.verified && <div className="marker-radar" />}
               <div className={`marker-pin ${loc.verified ? 'verified' : ''}`}>
-                <span className="marker-icon">
-                  {loc.service === 'Electrical' ? '⚡' :
-                   loc.service === 'Plumbing' ? '🚰' :
-                   loc.service === 'Cleaning' ? '✨' :
-                   loc.service === 'AC Repair' ? '❄️' :
-                   loc.service === 'Painting' ? '🎨' :
-                   loc.service === 'Carpentry' ? '🪚' : '🔧'}
-                </span>
+                <CategoryIcon categoryName={loc.service} size={14} strokeWidth={2} />
               </div>
             </div>
           );
@@ -201,7 +199,7 @@ export const MapView = ({
             onClick={() => setActivePopup(null)}
             aria-label="Close popup"
           >
-            ✕
+            <X size={14} />
           </button>
 
           <div className="flex items-start gap-3">
@@ -215,16 +213,10 @@ export const MapView = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.25rem',
                 flexShrink: 0,
               }}
             >
-              {activePopup.service === 'Electrical' ? '⚡' :
-               activePopup.service === 'Plumbing' ? '🚰' :
-               activePopup.service === 'Cleaning' ? '✨' :
-               activePopup.service === 'AC Repair' ? '❄️' :
-               activePopup.service === 'Painting' ? '🎨' :
-               activePopup.service === 'Carpentry' ? '🪚' : '🔧'}
+              <CategoryIcon categoryName={activePopup.service} size={22} strokeWidth={2} />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -246,8 +238,9 @@ export const MapView = ({
               )}
 
               {activePopup.serviceArea && (
-                <p className="text-xs text-muted mb-2">
-                  📍 Area: <strong>{activePopup.serviceArea}</strong>
+                <p className="text-xs text-muted mb-2 flex items-center gap-1">
+                  <MapPin size={12} color="var(--neutral-400)" />
+                  <span>Area: <strong>{activePopup.serviceArea}</strong></span>
                 </p>
               )}
 

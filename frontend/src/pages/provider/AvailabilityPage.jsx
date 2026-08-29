@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { providerService } from '../../services/providerService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { Button } from '../../components/common/Button';
+import { CheckCircle2, Check, Plus, Clock } from 'lucide-react';
 
 export const AvailabilityPage = () => {
   const { user, providerProfile, updateProvider } = useAuth();
@@ -71,8 +72,8 @@ export const AvailabilityPage = () => {
           
           <div className="card" style={{ padding: '2rem' }}>
             {saved && (
-              <div className="alert alert-success mb-4">
-                <span>✓</span>
+              <div className="alert alert-success mb-4 flex items-center gap-2">
+                <CheckCircle2 size={18} />
                 <span>Availability schedule updated successfully!</span>
               </div>
             )}
@@ -124,11 +125,11 @@ export const AvailabilityPage = () => {
                       <button
                         key={day}
                         type="button"
-                        className={`btn btn-sm ${isChecked ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`btn btn-sm ${isChecked ? 'btn-primary' : 'btn-secondary'} flex items-center justify-center gap-1`}
                         onClick={() => handleDayToggle(day)}
                         style={{ padding: '8px 12px' }}
                       >
-                        <span>{isChecked ? '✓' : '+'}</span>
+                        {isChecked ? <Check size={14} /> : <Plus size={14} />}
                         <span>{day}</span>
                       </button>
                     );
@@ -148,7 +149,7 @@ export const AvailabilityPage = () => {
                 />
               </div>
 
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="primary" loading={saving}>
                 Save Working Schedule
               </Button>
             </form>

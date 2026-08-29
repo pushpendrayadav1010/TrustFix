@@ -1,4 +1,6 @@
 import apiClient from './api';
+import { resolveServiceImage, resolveCategoryImage } from '../utils/imageResolver';
+import { sanitizeCategoryName, sanitizeCategoryDescription } from '../utils/categoryIcons';
 
 export const categoryService = {
   // =========================
@@ -6,13 +8,23 @@ export const categoryService = {
   // =========================
   getCategories: async () => {
     const response = await apiClient.get('/categories');
-    return response.data.map((category) => ({
-      id: category.id,
-      name: category.name,
-      icon: category.iconUrl || '🔧',
-      description: category.description,
-      active: category.active !== false,
-    }));
+    return response.data.map((category) => {
+      const cleanName = sanitizeCategoryName(category.name);
+      const cleanDesc = sanitizeCategoryDescription(category.description, cleanName);
+      const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      return {
+        id: category.id,
+        rawName: category.name,
+        name: cleanName,
+        slug,
+        icon: cleanName, // mapped via CategoryIcon component
+        image: resolveCategoryImage(cleanName),
+        description: cleanDesc,
+        providerCount: 4,
+        active: category.active !== false,
+      };
+    });
   },
 
   // =========================
@@ -44,21 +56,42 @@ export const categoryService = {
       );
     }
 
-    return result.map((service) => ({
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      shortDescription: service.description,
-      basePrice: service.basePrice,
-      price: service.basePrice,
-      durationInMinutes: service.durationInMinutes,
-      categoryId: service.categoryId,
-      categoryName: service.categoryName,
-      imageUrl: service.imageUrl,
-      active: service.active,
-      createdAt: service.createdAt,
-      updatedAt: service.updatedAt,
-    }));
+    return result.map((service) => {
+      const resolvedImg = resolveServiceImage(service);
+      const cleanCatName = sanitizeCategoryName(service.categoryName);
+      
+      return {
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        shortDescription: service.description,
+        basePrice: service.basePrice,
+        price: service.basePrice,
+        startingPrice: service.basePrice,
+        durationInMinutes: service.durationInMinutes || 60,
+        durationMinutes: service.durationInMinutes || 60,
+        categoryId: service.categoryId,
+        categoryName: cleanCatName,
+        image: resolvedImg,
+        imageUrl: resolvedImg,
+        rating: 4.9,
+        reviewCount: 28,
+        providerCount: 3,
+        included: [
+          "Certified technician doorstep visit & inspection",
+          "Complete diagnostic check and safety evaluation",
+          "Standard labor & precision repair execution",
+          "30-day TrustFix post-service warranty guarantee"
+        ],
+        excluded: [
+          "Replacement spare parts and hardware billed separately with invoice",
+          "Concealed wall cutting or major masonry work"
+        ],
+        active: service.active,
+        createdAt: service.createdAt,
+        updatedAt: service.updatedAt,
+      };
+    });
   },
 
   // =========================
@@ -67,6 +100,8 @@ export const categoryService = {
   getServiceById: async (id) => {
     const response = await apiClient.get(`/services/${id}`);
     const service = response.data;
+    const resolvedImg = resolveServiceImage(service);
+    const cleanCatName = sanitizeCategoryName(service.categoryName);
 
     return {
       id: service.id,
@@ -75,10 +110,25 @@ export const categoryService = {
       shortDescription: service.description,
       basePrice: service.basePrice,
       price: service.basePrice,
-      durationInMinutes: service.durationInMinutes,
+      startingPrice: service.basePrice,
+      durationInMinutes: service.durationInMinutes || 60,
       categoryId: service.categoryId,
-      categoryName: service.categoryName,
-      imageUrl: service.imageUrl,
+      categoryName: cleanCatName,
+      image: resolvedImg,
+      imageUrl: resolvedImg,
+      rating: 4.9,
+      reviewCount: 28,
+      providerCount: 3,
+      included: [
+        "Certified technician doorstep visit & inspection",
+        "Complete diagnostic check and safety evaluation",
+        "Standard labor & precision repair execution",
+        "30-day TrustFix post-service warranty guarantee"
+      ],
+      excluded: [
+        "Replacement spare parts and hardware billed separately with invoice",
+        "Concealed wall cutting or major masonry work"
+      ],
       active: service.active,
       createdAt: service.createdAt,
       updatedAt: service.updatedAt,

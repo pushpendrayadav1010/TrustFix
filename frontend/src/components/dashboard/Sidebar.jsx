@@ -2,6 +2,24 @@ import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { VerificationBadge } from '../common/VerificationBadge';
+import {
+  LayoutDashboard,
+  Search,
+  Calendar,
+  MapPin,
+  User,
+  Wrench,
+  ClipboardList,
+  CreditCard,
+  Inbox,
+  Star,
+  Clock,
+  Users,
+  ShieldCheck,
+  Layers,
+  Globe,
+  LogOut,
+} from 'lucide-react';
 
 export const Sidebar = ({ role = 'CUSTOMER' }) => {
   const { user, providerProfile, logout } = useAuth();
@@ -13,30 +31,30 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
   };
 
   const customerLinks = [
-    { to: '/customer/dashboard', label: 'Dashboard', icon: '📊', end: true },
-    { to: '/customer/browse', label: 'Browse Services', icon: '🔍' },
-    { to: '/customer/bookings', label: 'My Bookings', icon: '📅' },
-    { to: '/customer/addresses', label: 'Saved Addresses', icon: '📍' },
-    { to: '/customer/profile', label: 'Account Profile', icon: '👤' },
+    { to: '/customer/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/customer/browse', label: 'Browse Services', icon: Search },
+    { to: '/customer/bookings', label: 'My Bookings', icon: Calendar },
+    { to: '/customer/addresses', label: 'Saved Addresses', icon: MapPin },
+    { to: '/customer/profile', label: 'Account Profile', icon: User },
   ];
 
   const providerLinks = [
-    { to: '/provider/dashboard', label: 'Dashboard', icon: '📊', end: true },
-    { to: '/provider/profile', label: 'Profile & Location', icon: '🛠️' },
-    { to: '/provider/services', label: 'My Services', icon: '📋' },
-    { to: '/provider/pricing', label: 'Manage Pricing', icon: '💰' },
-    { to: '/provider/requests', label: 'Booking Requests', icon: '📬' },
-    { to: '/provider/reviews', label: 'Customer Reviews', icon: '⭐' },
-    { to: '/provider/availability', label: 'Availability', icon: '⏰' },
+    { to: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/provider/profile', label: 'Profile & Location', icon: Wrench },
+    { to: '/provider/services', label: 'My Services', icon: ClipboardList },
+    { to: '/provider/pricing', label: 'Manage Pricing', icon: CreditCard },
+    { to: '/provider/requests', label: 'Booking Requests', icon: Inbox },
+    { to: '/provider/reviews', label: 'Customer Reviews', icon: Star },
+    { to: '/provider/availability', label: 'Availability', icon: Clock },
   ];
 
   const adminLinks = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: '📊', end: true },
-    { to: '/admin/users', label: 'Users Directory', icon: '👥' },
-    { to: '/admin/providers', label: 'Provider Verification', icon: '🛡️' },
-    { to: '/admin/categories', label: 'Category Catalog', icon: '🗂️' },
-    { to: '/admin/services', label: 'Service Catalog', icon: '📋' },
-    { to: '/admin/bookings', label: 'Bookings Monitor', icon: '📅' },
+    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/admin/users', label: 'Users Directory', icon: Users },
+    { to: '/admin/providers', label: 'Provider Verification', icon: ShieldCheck },
+    { to: '/admin/categories', label: 'Category Catalog', icon: Layers },
+    { to: '/admin/services', label: 'Service Catalog', icon: ClipboardList },
+    { to: '/admin/bookings', label: 'Bookings Monitor', icon: Calendar },
   ];
 
   const links = role === 'ADMIN' ? adminLinks : role === 'PROVIDER' ? providerLinks : customerLinks;
@@ -47,8 +65,8 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
       {/* Brand Header */}
       <div className="sidebar-brand">
         <Link to="/" className="navbar-brand">
-          <div className="brand-icon" style={{ width: '28px', height: '28px', fontSize: '0.9rem' }}>
-            🛡️
+          <div className="brand-icon" style={{ width: '32px', height: '32px' }}>
+            <ShieldCheck size={18} strokeWidth={2.2} />
           </div>
           <span style={{ fontSize: '1.15rem' }}>TrustFix</span>
         </Link>
@@ -56,25 +74,28 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
 
       {/* Navigation List */}
       <nav className="sidebar-nav">
-        <div style={{ padding: '0 8px 8px 8px', fontSize: '11px', fontWeight: 700, color: 'var(--neutral-400)', textTransform: 'uppercase' }}>
+        <div style={{ padding: '0 8px 8px 8px', fontSize: '11px', fontWeight: 700, color: 'var(--neutral-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {portalLabel}
         </div>
 
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.end}
-            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-          >
-            <span style={{ fontSize: '1.1rem' }}>{link.icon}</span>
-            <span>{link.label}</span>
-          </NavLink>
-        ))}
+        {links.map((link) => {
+          const Icon = link.icon;
+          return (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.end}
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            >
+              <Icon size={18} strokeWidth={1.8} />
+              <span>{link.label}</span>
+            </NavLink>
+          );
+        })}
 
         <div style={{ marginTop: 'auto', borderTop: '1px solid var(--neutral-200)', paddingTop: '8px' }}>
           <Link to="/" className="sidebar-link">
-            <span>🌐</span>
+            <Globe size={18} strokeWidth={1.8} />
             <span>Back to Website</span>
           </Link>
         </div>
@@ -107,7 +128,8 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
           onClick={handleLogout}
           className="btn btn-sm btn-secondary btn-block"
         >
-          Sign Out
+          <LogOut size={14} />
+          <span>Sign Out</span>
         </button>
       </div>
     </aside>

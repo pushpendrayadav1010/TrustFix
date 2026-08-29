@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { Calendar, MapPin, Star, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const BookingCard = ({ booking, onCancel, onReview, role = 'CUSTOMER' }) => {
   return (
@@ -57,16 +58,22 @@ export const BookingCard = ({ booking, onCancel, onReview, role = 'CUSTOMER' }) 
               color: 'var(--neutral-700)',
             }}
           >
-            <div>
-              <span className="text-muted block text-xs">Date & Time</span>
-              <strong>📅 {formatDate(booking.date)} at {booking.time}</strong>
+            <div className="flex items-center gap-2">
+              <Calendar size={14} color="var(--primary-700)" />
+              <div>
+                <span className="text-muted block text-2xs">Date & Time</span>
+                <strong>{formatDate(booking.date)} at {booking.time}</strong>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <span className="text-muted block text-xs">Service Address</span>
-              <span className="text-truncate block">
-                📍 {booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}` : booking.address?.city || 'Mumbai'}
-              </span>
+            <div className="flex-1 min-w-[200px] flex items-center gap-2">
+              <MapPin size={14} color="var(--primary-700)" />
+              <div>
+                <span className="text-muted block text-2xs">Service Address</span>
+                <span className="text-truncate block font-medium">
+                  {booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}` : booking.address?.city || 'Mumbai'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -80,7 +87,16 @@ export const BookingCard = ({ booking, onCancel, onReview, role = 'CUSTOMER' }) 
 
       <div className="card-footer flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 text-xs text-muted">
-          <span>Payment: <strong>{booking.paymentStatus === 'PAID' ? 'Paid ✓' : 'Pay Post Service'}</strong></span>
+          <span>Payment: </span>
+          <strong className="flex items-center gap-1">
+            {booking.paymentStatus === 'PAID' ? (
+              <span className="text-success flex items-center gap-1">
+                <CheckCircle2 size={12} /> Paid Online
+              </span>
+            ) : (
+              'Pay Post Service'
+            )}
+          </strong>
         </div>
 
         <div className="flex items-center gap-2">
@@ -89,7 +105,8 @@ export const BookingCard = ({ booking, onCancel, onReview, role = 'CUSTOMER' }) 
               onClick={() => onReview && onReview(booking)}
               className="btn btn-sm btn-success"
             >
-              ★ Write Review
+              <Star size={13} fill="currentColor" />
+              <span>Write Review</span>
             </button>
           )}
 
@@ -107,7 +124,8 @@ export const BookingCard = ({ booking, onCancel, onReview, role = 'CUSTOMER' }) 
             to={role === 'PROVIDER' ? `/provider/bookings/${booking.id}` : `/customer/bookings/${booking.id}`}
             className="btn btn-sm btn-primary"
           >
-            View Details & Timeline →
+            <span>View Details</span>
+            <ArrowRight size={13} />
           </Link>
         </div>
       </div>

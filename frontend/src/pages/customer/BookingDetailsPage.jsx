@@ -9,6 +9,7 @@ import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { CheckCircle2, Star, Calendar, Clock, MapPin, ShieldCheck, ChevronRight } from 'lucide-react';
 
 export const BookingDetailsPage = () => {
   const { bookingId } = useParams();
@@ -83,14 +84,18 @@ export const BookingDetailsPage = () => {
       <div className="container">
         
         {/* Breadcrumb */}
-        <nav style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: 'var(--neutral-500)' }}>
-          <Link to="/customer/dashboard">Dashboard</Link> <span>›</span> <Link to="/customer/bookings">My Bookings</Link> <span>›</span> <span>{booking.id}</span>
+        <nav style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Link to="/customer/dashboard">Dashboard</Link>
+          <ChevronRight size={14} />
+          <Link to="/customer/bookings">My Bookings</Link>
+          <ChevronRight size={14} />
+          <span style={{ color: 'var(--neutral-800)', fontWeight: 600 }}>#{booking.id}</span>
         </nav>
 
         {/* Success Confirmation Banner */}
         {isNewSuccess && (
           <div className="alert alert-success mb-6">
-            <span style={{ fontSize: '1.25rem' }}>🎉</span>
+            <CheckCircle2 size={22} style={{ flexShrink: 0 }} />
             <div>
               <h5 style={{ fontWeight: 800, margin: 0 }}>Booking Confirmed Successfully!</h5>
               <p className="text-xs" style={{ margin: 0, marginTop: '2px' }}>
@@ -123,8 +128,9 @@ export const BookingDetailsPage = () => {
               )}
 
               {booking.status === 'COMPLETED' && !booking.hasReview && (
-                <button onClick={() => setReviewModalOpen(true)} className="btn btn-sm btn-success">
-                  ★ Leave Review
+                <button onClick={() => setReviewModalOpen(true)} className="btn btn-sm btn-success flex items-center gap-1">
+                  <Star size={13} fill="currentColor" />
+                  <span>Leave Review</span>
                 </button>
               )}
 
@@ -177,14 +183,20 @@ export const BookingDetailsPage = () => {
                   fontSize: '0.85rem',
                 }}
               >
-                <div>
-                  <span className="text-muted block text-xs">Scheduled Date</span>
-                  <strong>📅 {formatDate(booking.date)}</strong>
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} color="var(--primary-700)" />
+                  <div>
+                    <span className="text-muted block text-2xs">Scheduled Date</span>
+                    <strong>{formatDate(booking.date)}</strong>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-muted block text-xs">Scheduled Time</span>
-                  <strong>🕒 {booking.time}</strong>
+                <div className="flex items-center gap-2">
+                  <Clock size={14} color="var(--primary-700)" />
+                  <div>
+                    <span className="text-muted block text-2xs">Scheduled Time</span>
+                    <strong>{booking.time}</strong>
+                  </div>
                 </div>
               </div>
 
@@ -203,8 +215,9 @@ export const BookingDetailsPage = () => {
               <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                 Service Location & Address
               </h4>
-              <p className="text-xs text-muted mb-3">
-                📍 {booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}, ${booking.address.city} - ${booking.address.pincode}` : 'Mumbai'}
+              <p className="text-xs text-muted mb-3 flex items-center gap-1">
+                <MapPin size={13} color="var(--primary-700)" />
+                <span>{booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}, ${booking.address.city} - ${booking.address.pincode}` : 'Mumbai'}</span>
               </p>
 
               <div style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
@@ -277,9 +290,13 @@ export const BookingDetailsPage = () => {
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '11px',
                   color: 'var(--neutral-600)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                🔒 Covered by TrustFix 30-Day Post-Service Guarantee. No advance payment required.
+                <ShieldCheck size={14} color="var(--success-600)" />
+                <span>Covered by TrustFix 30-Day Post-Service Guarantee. No advance payment required.</span>
               </div>
             </div>
 
@@ -310,14 +327,14 @@ export const BookingDetailsPage = () => {
                   type="button"
                   onClick={() => setRating(star)}
                   style={{
-                    fontSize: '1.75rem',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
+                    padding: '4px',
                     color: star <= rating ? '#F59E0B' : 'var(--neutral-300)',
                   }}
                 >
-                  ★
+                  <Star size={24} fill={star <= rating ? '#F59E0B' : 'none'} color="#F59E0B" />
                 </button>
               ))}
               <span className="font-bold text-sm ml-2">({rating} / 5 Stars)</span>

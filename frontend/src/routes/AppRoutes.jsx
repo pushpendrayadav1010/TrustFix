@@ -52,6 +52,7 @@ export const AppRoutes = () => {
         <Route path="/services/:categorySlug" element={<ServicesPage />} />
         <Route path="/services/detail/:serviceId" element={<ServiceDetailsPage />} />
         <Route path="/browse" element={<BrowseProvidersPage />} />
+        <Route path="/providers" element={<BrowseProvidersPage />} />
         <Route path="/providers/:providerId" element={<PublicProviderProfilePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

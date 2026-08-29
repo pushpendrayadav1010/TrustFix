@@ -8,6 +8,7 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { MapView } from '../../components/map/MapView';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
+import { CheckCircle2, Lock, MapPin, Globe, FileText } from 'lucide-react';
 
 export const ProviderProfilePage = () => {
   const { user, providerProfile, updateProvider } = useAuth();
@@ -54,8 +55,12 @@ export const ProviderProfilePage = () => {
           });
         }
 
-        const loc = await locationService.getLocationByProviderId(activeProfile?.id || 1).catch(() => null);
-        setProviderLoc(loc);
+        if (activeProfile?.id) {
+          const loc = await locationService.getLocationByProviderId(activeProfile.id).catch(() => null);
+          setProviderLoc(loc);
+        } else {
+          setProviderLoc(null);
+        }
       } catch (err) {
         console.error('Failed to load provider profile:', err);
       } finally {
@@ -118,8 +123,8 @@ export const ProviderProfilePage = () => {
               </div>
 
               {saveSuccess && (
-                <div className="alert alert-success mb-4">
-                  <span>✓</span>
+                <div className="alert alert-success mb-4 flex items-center gap-2">
+                  <CheckCircle2 size={18} />
                   <span>Profile updated successfully!</span>
                 </div>
               )}
@@ -136,12 +141,13 @@ export const ProviderProfilePage = () => {
                   color: 'var(--neutral-700)',
                 }}
               >
-                <div className="flex items-center gap-1 font-bold mb-1">
-                  <span>🔒 Verification Status:</span>
+                <div className="flex items-center gap-2 font-bold mb-1">
+                  <Lock size={14} color="var(--neutral-600)" />
+                  <span>Verification Status:</span>
                   <VerificationBadge status={providerProfile?.verificationStatus} size="sm" />
                 </div>
                 <p style={{ margin: 0, fontSize: '11px', color: 'var(--neutral-500)' }}>
-                  Verification badges are issued exclusively by TrustFix Admin review following physical identity and trade license audits. Verification status cannot be manually altered.
+                  Verification badges are issued exclusively by TrustFix Admin review following physical identity and trade license audits.
                 </p>
               </div>
 
@@ -162,7 +168,7 @@ export const ProviderProfilePage = () => {
                   required
                 />
 
-                <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
                   <Input
                     label="Phone Number"
                     name="phone"
@@ -231,7 +237,7 @@ export const ProviderProfilePage = () => {
                 <div style={{ height: '300px', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '1rem' }}>
                   <MapView
                     locations={providerLoc ? [providerLoc] : []}
-                    selectedProviderId={providerProfile?.id || 101}
+                    selectedProviderId={providerProfile?.id}
                     height="300px"
                     showServiceRadius={true}
                     interactive={true}
@@ -241,11 +247,17 @@ export const ProviderProfilePage = () => {
                 <div className="flex flex-col gap-2 text-xs">
                   <div>
                     <span className="text-muted block">Primary Operating Base:</span>
-                    <strong>📍 {providerLoc?.address || 'Teen Hath Naka, Thane West'}</strong>
+                    <strong className="flex items-center gap-1">
+                      <MapPin size={12} color="var(--primary-700)" />
+                      <span>{providerLoc?.address || 'Teen Hath Naka, Thane West'}</span>
+                    </strong>
                   </div>
                   <div>
                     <span className="text-muted block">Coverage Radius:</span>
-                    <strong>🌐 ~{providerLoc?.serviceRadiusKm || 12} km radius</strong>
+                    <strong className="flex items-center gap-1">
+                      <Globe size={12} color="var(--primary-700)" />
+                      <span>~{providerLoc?.serviceRadiusKm || 12} km radius</span>
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -258,8 +270,14 @@ export const ProviderProfilePage = () => {
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {(providerProfile?.documentsVerified || ['Govt Electrical Trade License', 'Aadhaar Identity Card', 'Police Clearance Certificate']).map((doc, idx) => (
                     <li key={idx} className="flex items-center justify-between text-xs p-2 bg-neutral-50 rounded border" style={{ backgroundColor: 'var(--neutral-50)', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)' }}>
-                      <span>📄 {doc}</span>
-                      <span className="badge badge-verified" style={{ fontSize: '10px' }}>✓ Approved</span>
+                      <span className="flex items-center gap-2">
+                        <FileText size={13} color="var(--primary-700)" />
+                        <span>{doc}</span>
+                      </span>
+                      <span className="badge badge-verified" style={{ fontSize: '10px' }}>
+                        <CheckCircle2 size={10} />
+                        Approved
+                      </span>
                     </li>
                   ))}
                 </ul>
