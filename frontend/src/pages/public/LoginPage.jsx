@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { isValidEmail } from '../../utils/validators';
-import { ShieldCheck, User, Wrench, Clock, Shield, AlertCircle, X, Sparkles } from 'lucide-react';
+import { ShieldCheck, AlertCircle, X } from 'lucide-react';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +14,7 @@ export const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
 
-  const { login, switchDemoPersona } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname;
@@ -55,19 +55,6 @@ export const LoginPage = () => {
       }
     } catch (err) {
       setAuthError(err.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickDemoLogin = async (persona, path) => {
-    setLoading(true);
-    setAuthError('');
-    try {
-      await switchDemoPersona(persona);
-      navigate(path);
-    } catch (err) {
-      setAuthError('Demo login failed: ' + (err.message || 'Error'));
     } finally {
       setLoading(false);
     }
@@ -147,64 +134,6 @@ export const LoginPage = () => {
               Sign In
             </Button>
           </form>
-
-          {/* Quick Demo Credentials Box */}
-          <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--neutral-200)', paddingTop: '1.25rem' }}>
-            <span className="text-xs text-muted block font-semibold mb-2 text-center flex items-center justify-center gap-1">
-              <Sparkles size={13} color="var(--primary-700)" />
-              Instant Demo Logins (One-Click Testing)
-            </span>
-
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-light justify-between"
-                onClick={() => handleQuickDemoLogin('CUSTOMER', '/customer/dashboard')}
-              >
-                <span className="flex items-center gap-2">
-                  <User size={14} />
-                  <span>Customer (Test Customer)</span>
-                </span>
-                <span className="badge badge-confirmed">Instant Access</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-sm btn-light justify-between"
-                onClick={() => handleQuickDemoLogin('PROVIDER_VERIFIED', '/provider/dashboard')}
-              >
-                <span className="flex items-center gap-2">
-                  <Wrench size={14} />
-                  <span>Verified Provider (Rajesh Kumar)</span>
-                </span>
-                <span className="badge badge-verified">Verified</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-sm btn-light justify-between"
-                onClick={() => handleQuickDemoLogin('PROVIDER_PENDING', '/provider/dashboard')}
-              >
-                <span className="flex items-center gap-2">
-                  <Clock size={14} />
-                  <span>Pending Provider (Anand Verma)</span>
-                </span>
-                <span className="badge badge-pending">Pending Review</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-sm btn-light justify-between"
-                onClick={() => handleQuickDemoLogin('ADMIN', '/admin/dashboard')}
-              >
-                <span className="flex items-center gap-2">
-                  <Shield size={14} />
-                  <span>System Admin (admin@trustfix.com)</span>
-                </span>
-                <span className="badge" style={{ backgroundColor: '#f3e8ff', color: '#6b21a8' }}>Platform Admin</span>
-              </button>
-            </div>
-          </div>
 
           {/* Registration Link */}
           <div className="text-center mt-6 text-sm text-muted">

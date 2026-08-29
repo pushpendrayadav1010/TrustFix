@@ -7,8 +7,6 @@ import com.trustfix.exception.ResourceNotFoundException;
 import com.trustfix.repository.UserRepository;
 import com.trustfix.security.JwtService;
 import com.trustfix.dto.mapper.ProviderServiceMapper;
-import com.trustfix.repository.UserRepository;
-import com.trustfix.security.JwtService;
 import com.trustfix.service.ProviderServiceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
