@@ -54,15 +54,18 @@ const mapBookingResponse = (b) => {
 };
 
 export const bookingService = {
-  // Real API create booking using POST /api/bookings?customerId={}&serviceId={}&addressId={}&providerId={}
+  // Real API create booking using POST /api/bookings
   createBooking: async (bookingData) => {
     try {
-      const customerId = bookingData.customerId || 4;
-      const serviceId = bookingData.serviceId || 1;
+      const customerId = bookingData.customerId;
+      const serviceId = bookingData.serviceId;
       const addressId = bookingData.addressId;
       const providerId = bookingData.providerId;
 
-      if (!addressId || addressId === 'undefined' || addressId === 'null') {
+      if (!serviceId) {
+        throw new Error('Please select a valid service to book.');
+      }
+      if (!addressId) {
         throw new Error('Valid address selection is required to create a booking.');
       }
 
@@ -72,6 +75,10 @@ export const bookingService = {
       }
 
       const body = {
+        customerId: customerId ? Number(customerId) : undefined,
+        serviceId: Number(serviceId),
+        addressId: Number(addressId),
+        providerId: providerId ? Number(providerId) : undefined,
         bookingDate: bookingData.date || new Date().toISOString().split('T')[0],
         bookingTime: formatToTime(bookingData.time),
         totalAmount: bookingData.price || bookingData.totalAmount || undefined,
