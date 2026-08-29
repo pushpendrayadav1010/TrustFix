@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
+import { CategoryIcon } from '../../utils/categoryIcons';
+import { sanitizeCategoryName, sanitizeCategoryDescription } from '../../utils/categoryIcons';
+import { Plus, Edit2, Trash2, CheckCircle2, AlertCircle, FolderTree } from 'lucide-react';
 
 export const AdminCategoriesPage = () => {
   const [categories, setCategories] = useState([]);
@@ -14,7 +17,7 @@ export const AdminCategoriesPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    iconUrl: '🛠️',
+    iconUrl: 'Wrench',
     active: true,
   });
 
@@ -38,16 +41,16 @@ export const AdminCategoriesPage = () => {
 
   const handleOpenCreate = () => {
     setEditId(null);
-    setFormData({ name: '', description: '', iconUrl: '🛠️', active: true });
+    setFormData({ name: '', description: '', iconUrl: 'Wrench', active: true });
     setShowModal(true);
   };
 
   const handleOpenEdit = (cat) => {
     setEditId(cat.id);
     setFormData({
-      name: cat.name || '',
-      description: cat.description || '',
-      iconUrl: cat.iconUrl || '🛠️',
+      name: sanitizeCategoryName(cat.name) || '',
+      description: sanitizeCategoryDescription(cat.description) || '',
+      iconUrl: cat.iconUrl || 'Wrench',
       active: cat.active !== false,
     });
     setShowModal(true);
@@ -93,22 +96,25 @@ export const AdminCategoriesPage = () => {
       <div className="dashboard-content">
         <div className="container" style={{ maxWidth: '1200px' }}>
           {actionSuccess && (
-            <div className="alert alert-success mb-4" role="alert">
-              ✓ {actionSuccess}
+            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
+              <CheckCircle2 size={18} />
+              <span>{actionSuccess}</span>
             </div>
           )}
 
           {error && (
-            <div className="alert alert-danger mb-4" role="alert">
-              ⚠️ {error}
+            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Action Bar */}
           <div className="card p-3 mb-4 flex items-center justify-between">
             <h4 style={{ margin: 0, fontWeight: 700 }}>Service Categories Catalog</h4>
-            <button className="btn btn-primary" onClick={handleOpenCreate}>
-              + Add New Category
+            <button className="btn btn-primary flex items-center gap-1" onClick={handleOpenCreate}>
+              <Plus size={16} />
+              <span>Add New Category</span>
             </button>
           </div>
 
@@ -120,7 +126,7 @@ export const AdminCategoriesPage = () => {
                 <p className="text-muted">Loading categories from backend...</p>
               </div>
             ) : categories.length === 0 ? (
-              <div className="p-5 text-center text-muted">No categories available in MySQL.</div>
+              <div className="p-5 text-center text-muted">No categories available in database.</div>
             ) : (
               <div className="table-responsive">
                 <table className="table table-hover mb-0" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -138,10 +144,25 @@ export const AdminCategoriesPage = () => {
                     {categories.map((c) => (
                       <tr key={c.id} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>#{c.id}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '1.5rem' }}>{c.iconUrl || '🛠️'}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{c.name}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: 'var(--radius-sm)',
+                              backgroundColor: 'var(--primary-50)',
+                              color: 'var(--primary-800)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <CategoryIcon categoryName={c.name} slug={c.slug} size={18} />
+                          </div>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{sanitizeCategoryName(c.name)}</td>
                         <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--neutral-600)' }}>
-                          {c.description || 'No description'}
+                          {sanitizeCategoryDescription(c.description) || 'Professional home service category'}
                         </td>
                         <td style={{ padding: '0.75rem 1rem' }}>
                           <span
@@ -159,11 +180,13 @@ export const AdminCategoriesPage = () => {
                         </td>
                         <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                           <div className="flex items-center justify-end gap-2">
-                            <button className="btn btn-sm btn-outline-secondary" onClick={() => handleOpenEdit(c)}>
-                              Edit
+                            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={() => handleOpenEdit(c)}>
+                              <Edit2 size={12} />
+                              <span>Edit</span>
                             </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c.id, c.name)}>
-                              Delete
+                            <button className="btn btn-sm btn-secondary flex items-center gap-1" style={{ color: 'var(--danger-600)' }} onClick={() => handleDelete(c.id, c.name)}>
+                              <Trash2 size={12} />
+                              <span>Delete</span>
                             </button>
                           </div>
                         </td>
@@ -204,16 +227,6 @@ export const AdminCategoriesPage = () => {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Icon Emoji or Image URL</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.iconUrl}
-                      onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
                     />
                   </div>
 

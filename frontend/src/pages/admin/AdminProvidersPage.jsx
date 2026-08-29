@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
 import { VerificationBadge } from '../../components/common/VerificationBadge';
+import { CheckCircle2, AlertCircle, RotateCw, Check, X, ShieldCheck } from 'lucide-react';
 
 export const AdminProvidersPage = () => {
   const [providers, setProviders] = useState([]);
@@ -62,20 +63,22 @@ export const AdminProvidersPage = () => {
       <div className="dashboard-content">
         <div className="container" style={{ maxWidth: '1200px' }}>
           {actionSuccess && (
-            <div className="alert alert-success mb-4" role="alert">
-              ✓ {actionSuccess}
+            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
+              <CheckCircle2 size={18} />
+              <span>{actionSuccess}</span>
             </div>
           )}
 
           {error && (
-            <div className="alert alert-danger mb-4" role="alert">
-              ⚠️ {error}
+            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Filter Bar */}
           <div className="card p-3 mb-4 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-sm">Status Filter:</span>
               <button
                 className={`btn btn-sm ${statusFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
@@ -103,8 +106,9 @@ export const AdminProvidersPage = () => {
               </button>
             </div>
 
-            <button className="btn btn-sm btn-outline-primary" onClick={fetchProviders}>
-              🔄 Refresh List
+            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={fetchProviders}>
+              <RotateCw size={13} />
+              <span>Refresh List</span>
             </button>
           </div>
 
@@ -160,21 +164,24 @@ export const AdminProvidersPage = () => {
                               <>
                                 {p.verificationStatus !== 'VERIFIED' && (
                                   <button
-                                    className="btn btn-sm btn-success"
+                                    className="btn btn-sm btn-success flex items-center gap-1"
                                     disabled={processingId === p.id}
                                     onClick={() => handleVerify(p.id, 'VERIFIED')}
                                   >
-                                    ✓ Verify
+                                    <Check size={14} />
+                                    <span>Verify</span>
                                   </button>
                                 )}
 
                                 {p.verificationStatus !== 'REJECTED' && (
                                   <button
-                                    className="btn btn-sm btn-outline-danger"
+                                    className="btn btn-sm btn-secondary flex items-center gap-1"
+                                    style={{ color: 'var(--danger-600)' }}
                                     disabled={processingId === p.id}
                                     onClick={() => handleVerify(p.id, 'REJECTED')}
                                   >
-                                    ✕ Reject
+                                    <X size={14} />
+                                    <span>Reject</span>
                                   </button>
                                 )}
                               </>

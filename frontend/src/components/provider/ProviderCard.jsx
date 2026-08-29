@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import { RatingStars } from '../common/RatingStars';
 import { VerificationBadge } from '../common/VerificationBadge';
 import { formatCurrency } from '../../utils/formatters';
+import { resolveProviderAvatar } from '../../utils/imageResolver';
+import { MapPin, Map, ArrowRight } from 'lucide-react';
 
 export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) => {
+  const avatarUrl = provider.avatar || resolveProviderAvatar(provider);
+
   return (
     <div className={`card card-hoverable ${isSelected ? 'border-primary' : ''}`} style={{ position: 'relative' }}>
       <div className="card-body">
@@ -12,7 +16,7 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
           {/* Avatar with Status Dot */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <img
-              src={provider.avatar}
+              src={avatarUrl}
               alt={provider.name}
               style={{
                 width: '64px',
@@ -45,7 +49,7 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
               </p>
             )}
 
-            <div className="flex items-center gap-3 flex-wrap text-xs text-muted mb-2">
+            <div className="flex items-center gap-2 flex-wrap text-xs text-muted mb-2">
               <span className="font-semibold" style={{ color: 'var(--neutral-800)' }}>
                 {provider.service}
               </span>
@@ -56,13 +60,13 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
             </div>
 
             {/* Ratings */}
-            <div className="mb-3">
+            <div className="mb-2">
               <RatingStars rating={provider.rating} reviewCount={provider.reviewCount} size="sm" />
             </div>
 
             {/* Service Area */}
             <p className="text-xs text-muted mb-3 flex items-center gap-1">
-              <span>📍</span>
+              <MapPin size={12} color="var(--neutral-400)" />
               <span className="text-truncate">Area: <strong>{provider.serviceArea}</strong></span>
             </p>
 
@@ -94,12 +98,14 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
                     onClick={() => onSelectOnMap(provider.id)}
                     title="Locate on map"
                   >
-                    🗺️ Pin
+                    <Map size={13} />
+                    <span>Pin</span>
                   </button>
                 )}
 
                 <Link to={`/providers/${provider.id}`} className="btn btn-sm btn-primary">
-                  View Profile & Book
+                  <span>Book</span>
+                  <ArrowRight size={13} />
                 </Link>
               </div>
             </div>

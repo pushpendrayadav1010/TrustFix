@@ -9,6 +9,22 @@ import { VerificationBadge } from '../../components/common/VerificationBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import {
+  ShieldCheck,
+  Clock,
+  BarChart3,
+  Inbox,
+  Zap,
+  Star,
+  CreditCard,
+  MapPin,
+  Calendar,
+  ClipboardList,
+  Check,
+  X,
+  ArrowRight,
+  UserCheck,
+} from 'lucide-react';
 
 export const ProviderDashboard = () => {
   const { user, providerProfile, updateProvider } = useAuth();
@@ -20,18 +36,24 @@ export const ProviderDashboard = () => {
     setLoading(true);
     try {
       let activeProfile = providerProfile;
-      if (!activeProfile && user?.id) {
+      if (user?.id) {
         try {
-          activeProfile = await providerService.getProviderByUserId(user.id);
-          updateProvider(activeProfile);
+          const fresh = await providerService.getProviderByUserId(user.id);
+          if (fresh) {
+            activeProfile = fresh;
+            updateProvider(fresh);
+          }
         } catch (e) {
-          console.warn('Could not resolve provider profile:', e);
+          console.warn('[ProviderDashboard] Could not resolve provider profile:', e);
         }
       }
 
-      const targetId = activeProfile?.id || 1;
-      const data = await bookingService.getProviderBookings(targetId);
-      setBookings(data);
+      if (activeProfile?.id) {
+        const data = await bookingService.getProviderBookings(activeProfile.id);
+        setBookings(data);
+      } else {
+        setBookings([]);
+      }
     } catch (err) {
       console.error('Failed to fetch provider dashboard data:', err);
       setBookings([]);
@@ -117,9 +139,24 @@ export const ProviderDashboard = () => {
             >
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <span style={{ fontSize: '1.75rem' }}>
-                    {providerProfile?.verificationStatus === 'VERIFIED' ? '🛡️' : '⏳'}
-                  </span>
+                  <div
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: providerProfile?.verificationStatus === 'VERIFIED' ? 'var(--success-100)' : 'var(--warning-100)',
+                      color: providerProfile?.verificationStatus === 'VERIFIED' ? 'var(--success-700)' : 'var(--warning-700)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {providerProfile?.verificationStatus === 'VERIFIED' ? (
+                      <ShieldCheck size={24} strokeWidth={2.2} />
+                    ) : (
+                      <Clock size={24} strokeWidth={2} />
+                    )}
+                  </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
@@ -129,14 +166,15 @@ export const ProviderDashboard = () => {
                     </div>
                     <p className="text-xs text-muted" style={{ margin: 0, marginTop: '2px' }}>
                       {providerProfile?.verificationStatus === 'VERIFIED'
-                        ? 'Your Aadhaar, trade certifications, and police background clearance are active. You receive top priority in customer search.'
+                        ? 'Your Aadhaar, trade certifications, and background clearance are active. You receive priority customer dispatch.'
                         : 'Your submitted documents are being vetted by our Trust & Safety team. You can configure services and pricing.'}
                     </p>
                   </div>
                 </div>
 
-                <Link to="/provider/profile" className="btn btn-sm btn-light">
-                  View Credentials Profile →
+                <Link to="/provider/profile" className="btn btn-sm btn-light flex items-center gap-1">
+                  <span>View Credentials</span>
+                  <ArrowRight size={13} />
                 </Link>
               </div>
             </div>
@@ -147,35 +185,35 @@ export const ProviderDashboard = () => {
                 title="Total Bookings"
                 value={bookings.length}
                 subtitle="All time requests"
-                icon="📊"
+                icon={<BarChart3 size={20} />}
                 color="primary"
               />
               <StatCard
                 title="Pending Requests"
                 value={pendingRequests.length}
-                subtitle="Requires your response"
-                icon="📬"
+                subtitle="Requires response"
+                icon={<Inbox size={20} />}
                 color={pendingRequests.length > 0 ? "warning" : "primary"}
               />
               <StatCard
                 title="Active Jobs"
                 value={inProgressBookings.length}
                 subtitle="Confirmed or in progress"
-                icon="⚡"
+                icon={<Zap size={20} />}
                 color="primary"
               />
               <StatCard
                 title="Average Rating"
-                value={`★ ${providerProfile?.rating || 4.9}`}
+                value={`${providerProfile?.rating || 4.9}`}
                 subtitle={`Based on ${providerProfile?.reviewCount || 100}+ reviews`}
-                icon="⭐"
+                icon={<Star size={20} fill="#F59E0B" color="#F59E0B" />}
                 color="success"
               />
               <StatCard
                 title="Estimated Earnings"
                 value={formatCurrency(totalEarnings)}
                 subtitle="From completed jobs"
-                icon="💰"
+                icon={<CreditCard size={20} />}
                 color="success"
               />
             </div>
@@ -193,8 +231,22 @@ export const ProviderDashboard = () => {
 
               {pendingRequests.length === 0 ? (
                 <div className="card" style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--white)' }}>
-                  <span style={{ fontSize: '2rem' }}>📬</span>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.25rem' }}>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--primary-50)',
+                      color: 'var(--primary-700)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 0.5rem auto',
+                    }}
+                  >
+                    <Inbox size={24} />
+                  </div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
                     No pending booking requests right now
                   </h4>
                   <p className="text-xs text-muted">
@@ -217,14 +269,23 @@ export const ProviderDashboard = () => {
                             {req.serviceName}
                           </h4>
 
-                          <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
-                            Customer: <strong>{req.customerName}</strong> ({req.customerPhone}) • 📍 {req.address?.city || 'Thane'}
+                          <p className="text-xs text-muted flex items-center gap-1" style={{ marginTop: '2px' }}>
+                            <span>Customer: <strong>{req.customerName}</strong> ({req.customerPhone})</span>
+                            <span>•</span>
+                            <MapPin size={11} color="var(--neutral-400)" />
+                            <span>{req.address?.city || 'Thane'}</span>
                           </p>
 
-                          <div className="flex gap-4 text-xs font-semibold text-neutral-800 mt-2">
-                            <span>📅 Date: {formatDate(req.date)}</span>
-                            <span>🕒 Slot: {req.time}</span>
-                            <span>💰 Est: {formatCurrency(req.price)}</span>
+                          <div className="flex gap-4 text-xs font-semibold text-neutral-800 mt-2 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} color="var(--primary-700)" />
+                              <span>{formatDate(req.date)}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} color="var(--primary-700)" />
+                              <span>{req.time}</span>
+                            </span>
+                            <span>Est: {formatCurrency(req.price)}</span>
                           </div>
 
                           {req.description && (
@@ -238,19 +299,21 @@ export const ProviderDashboard = () => {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            className="btn btn-sm btn-success"
+                            className="btn btn-sm btn-success flex items-center gap-1"
                             onClick={() => handleAcceptRequest(req.id)}
                           >
-                            ✓ Accept Job
+                            <Check size={14} />
+                            <span>Accept Job</span>
                           </button>
 
                           <button
                             type="button"
-                            className="btn btn-sm btn-secondary"
+                            className="btn btn-sm btn-secondary flex items-center gap-1"
                             style={{ color: 'var(--danger-600)' }}
                             onClick={() => handleRejectRequest(req.id)}
                           >
-                            ✕ Decline
+                            <X size={14} />
+                            <span>Decline</span>
                           </button>
 
                           <Link
@@ -277,17 +340,21 @@ export const ProviderDashboard = () => {
                 </h4>
 
                 <div className="grid grid-cols-2" style={{ gap: '10px' }}>
-                  <Link to="/provider/services" className="btn btn-light justify-start text-xs font-semibold">
-                    <span>📋 My Services</span>
+                  <Link to="/provider/services" className="btn btn-light justify-start text-xs font-semibold flex items-center gap-2">
+                    <ClipboardList size={14} />
+                    <span>My Services</span>
                   </Link>
-                  <Link to="/provider/pricing" className="btn btn-light justify-start text-xs font-semibold">
-                    <span>💰 Manage Pricing</span>
+                  <Link to="/provider/pricing" className="btn btn-light justify-start text-xs font-semibold flex items-center gap-2">
+                    <CreditCard size={14} />
+                    <span>Manage Pricing</span>
                   </Link>
-                  <Link to="/provider/profile" className="btn btn-light justify-start text-xs font-semibold">
-                    <span>🗺️ Service Area Map</span>
+                  <Link to="/provider/profile" className="btn btn-light justify-start text-xs font-semibold flex items-center gap-2">
+                    <MapPin size={14} />
+                    <span>Service Area</span>
                   </Link>
-                  <Link to="/provider/availability" className="btn btn-light justify-start text-xs font-semibold">
-                    <span>⏰ Working Hours</span>
+                  <Link to="/provider/availability" className="btn btn-light justify-start text-xs font-semibold flex items-center gap-2">
+                    <Clock size={14} />
+                    <span>Working Hours</span>
                   </Link>
                 </div>
               </div>

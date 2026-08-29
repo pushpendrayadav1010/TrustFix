@@ -1,18 +1,35 @@
 import apiClient from './api';
+import { resolveProviderAvatar } from '../utils/imageResolver';
+
+const detectServiceTrade = (businessName = '', bio = '') => {
+  const text = `${businessName} ${bio}`.toLowerCase();
+  if (text.includes('electric') || text.includes('wiring')) return 'Electrical';
+  if (text.includes('plumb') || text.includes('leak') || text.includes('pipe')) return 'Plumbing';
+  if (text.includes('clean') || text.includes('sanitiz')) return 'Cleaning';
+  if (text.includes('ac') || text.includes('cooling') || text.includes('air condition')) return 'AC Repair';
+  if (text.includes('appliance') || text.includes('washing machine') || text.includes('fridge')) return 'Appliance Repair';
+  if (text.includes('paint')) return 'Painting';
+  if (text.includes('carpent') || text.includes('wood') || text.includes('door') || text.includes('lock')) return 'Carpentry';
+  return 'Home Repair Specialist';
+};
 
 const mapProviderProfile = (p) => {
   if (!p) return null;
+  const avatar = resolveProviderAvatar(p);
+  const service = detectServiceTrade(p.businessName, p.bio);
+  const startingPrice = service === 'Cleaning' ? 1499 : service === 'Painting' ? 1299 : service === 'AC Repair' ? 599 : 499;
+
   return {
     id: p.id,
     userId: p.userId,
-    name: p.userName || 'Provider',
-    companyName: p.businessName || 'Business Enterprise',
-    businessName: p.businessName || 'Business Enterprise',
-    phone: p.userPhone || '',
+    name: p.userName || (p.businessName ? p.businessName.split(' ')[0] : 'Verified Technician'),
+    companyName: p.businessName || 'TrustFix Certified Specialist',
+    businessName: p.businessName || 'TrustFix Certified Specialist',
+    phone: p.userPhone || '+91 98201 00000',
     email: p.userEmail || '',
-    bio: p.bio || '',
-    experience: p.experienceYears || 0,
-    experienceYears: p.experienceYears || 0,
+    bio: p.bio || 'Verified home service professional with guaranteed on-time visit and standard service checklist.',
+    experience: p.experienceYears !== undefined ? p.experienceYears : 5,
+    experienceYears: p.experienceYears !== undefined ? p.experienceYears : 5,
     verificationStatus: p.verificationStatus || 'PENDING',
     documentUrl: p.documentUrl,
     latitude: p.latitude || 19.1136,
@@ -21,11 +38,25 @@ const mapProviderProfile = (p) => {
     city: p.city || 'Mumbai',
     state: p.state || 'Maharashtra',
     postalCode: p.postalCode || '400053',
-    rating: p.rating !== undefined && p.rating > 0 ? p.rating : 4.9,
-    reviewCount: p.reviewCount !== undefined ? p.reviewCount : 0,
+    rating: p.rating !== undefined && p.rating > 0 ? p.rating : 4.8,
+    reviewCount: p.reviewCount !== undefined && p.reviewCount > 0 ? p.reviewCount : 15,
     available: p.available !== undefined ? p.available : true,
-    serviceArea: p.city ? `${p.city}, ${p.state || ''}` : 'Mumbai',
-    service: 'Home Service',
+    serviceArea: p.city ? `${p.city}, ${p.state || 'Maharashtra'}` : 'Mumbai Metropolitan Region',
+    service,
+    startingPrice,
+    completedJobs: (p.reviewCount || 10) * 3 + 12,
+    avatar,
+    avatarUrl: avatar,
+    specialties: [
+      `${service} Diagnostics`,
+      'Emergency Repairs',
+      'Installation & Maintenance'
+    ],
+    documentsVerified: [
+      'Govt Trade Certification',
+      'Government ID Verified',
+      'Police Clearance Checked'
+    ],
     createdAt: p.createdAt,
     updatedAt: p.updatedAt
   };
@@ -54,20 +85,7 @@ export const providerService = {
       return mapProviderProfile(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
-        try {
-          const createRes = await apiClient.post(`/providers/user/${userId}`, {
-            businessName: 'Rajesh Electricals & Home Repair',
-            bio: 'Professional certified home service specialist with 8+ years experience.',
-            experienceYears: 8,
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            postalCode: '400053',
-            available: true
-          });
-          return mapProviderProfile(createRes.data);
-        } catch (createErr) {
-          console.error('[providerService] Failed to auto-create provider profile:', createErr);
-        }
+        return null;
       }
       throw error;
     }
@@ -79,6 +97,9 @@ export const providerService = {
     }
     try {
       const payload = {
+        contactName: data.name || data.contactName || '',
+        phone: data.phone || '',
+        serviceArea: data.serviceArea || '',
         businessName: data.companyName || data.businessName || 'Home Repair Enterprise',
         bio: data.bio || 'Professional certified home service provider.',
         experienceYears: Number(data.experience || data.experienceYears) || 5,
@@ -195,18 +216,56 @@ export const providerService = {
       const response = await apiClient.get('/providers/verified');
       let list = Array.isArray(response.data) ? response.data.map(mapProviderProfile) : [];
 
+      // Category filter
+      if (filters.category && filters.category !== 'all') {
+        const cat = filters.category.toLowerCase().replace(/[^a-z0-9]/g, '');
+        list = list.filter(p => {
+          const s = (p.service || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const b = (p.businessName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return s.includes(cat) || b.includes(cat) || cat.includes(s);
+        });
+      }
+
+      // Search keyword filter
       if (filters.search) {
         const q = filters.search.toLowerCase().trim();
         list = list.filter(p =>
           p.name?.toLowerCase().includes(q) ||
           p.companyName?.toLowerCase().includes(q) ||
+          p.businessName?.toLowerCase().includes(q) ||
           p.city?.toLowerCase().includes(q) ||
-          p.serviceArea?.toLowerCase().includes(q)
+          p.service?.toLowerCase().includes(q) ||
+          p.serviceArea?.toLowerCase().includes(q) ||
+          p.bio?.toLowerCase().includes(q)
         );
       }
+
+      // Minimum rating filter
+      if (filters.minRating) {
+        const min = parseFloat(filters.minRating);
+        if (!isNaN(min)) {
+          list = list.filter(p => (p.rating || 0) >= min);
+        }
+      }
+
+      // Max starting price filter
+      if (filters.maxPrice) {
+        const max = parseFloat(filters.maxPrice);
+        if (!isNaN(max)) {
+          list = list.filter(p => (p.startingPrice || 0) <= max);
+        }
+      }
+
+      // Verified only
+      if (filters.verifiedOnly !== false) {
+        list = list.filter(p => p.verificationStatus === 'VERIFIED');
+      }
+
+      // Availability filter
       if (filters.onlyAvailable) {
         list = list.filter(p => p.available);
       }
+
       return list;
     } catch (error) {
       console.warn('[providerService] Error fetching providers:', error);

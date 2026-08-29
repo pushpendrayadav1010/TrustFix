@@ -14,6 +14,12 @@ export const authService = {
         email: data.email,
         role: data.role
       };
+      if (token) {
+        localStorage.setItem('trustfix_token', token);
+      }
+      if (user) {
+        localStorage.setItem('trustfix_user', JSON.stringify(user));
+      }
       return {
         success: true,
         user,
@@ -27,28 +33,35 @@ export const authService = {
   },
 
   // Real API register using Spring Boot /api/auth/register
-  register: async ({ name, email, phone, password, role }) => {
+  register: async ({ name, email, phone, password, role, service, serviceArea }) => {
     try {
       const response = await apiClient.post('/auth/register', {
         name,
         email,
         phone,
         password,
-        role: role === 'PROVIDER' ? 'PROVIDER' : 'CUSTOMER'
+        role: role === 'PROVIDER' ? 'PROVIDER' : 'CUSTOMER',
+        service: role === 'PROVIDER' ? service : undefined,
+        serviceArea: role === 'PROVIDER' ? serviceArea : undefined
       });
-      const data = response.data;
       const user = {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        role: data.role
+        id: response.data.id,
+        name: response.data.name,
+        email: response.data.email,
+        phone: response.data.phone,
+        role: response.data.role
       };
-      return {
-        success: true,
-        user,
-        message: 'Registration successful'
-      };
+
+      // Registration also starts an authenticated session so a newly registered
+      // provider can immediately complete their profile instead of landing in a
+      // dashboard with no JWT/profile context.
+      const loginResponse = await apiClient.post('/auth/login', { email, password });
+      const loginData = loginResponse.data;
+      const token = loginData.message;
+      if (token) localStorage.setItem('trustfix_token', token);
+      localStorage.setItem('trustfix_user', JSON.stringify(user));
+
+      return { success: true, user, token, message: 'Registration successful' };
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Registration failed';
       throw new Error(errorMsg);

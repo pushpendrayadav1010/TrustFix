@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 
 export const BookingTimeline = ({ timeline = [], currentStatus }) => {
   return (
@@ -13,7 +14,7 @@ export const BookingTimeline = ({ timeline = [], currentStatus }) => {
             className={`timeline-item ${isDone ? 'done' : ''} ${isActive ? 'active' : ''}`}
           >
             <div className="timeline-marker">
-              {isDone ? '✓' : index + 1}
+              {isDone ? <Check size={12} strokeWidth={3} /> : index + 1}
             </div>
             <div className="timeline-content">
               <div className="flex items-center justify-between">

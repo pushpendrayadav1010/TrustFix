@@ -6,6 +6,7 @@ import { BookingCard } from '../../components/booking/BookingCard';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { Calendar, Star } from 'lucide-react';
 
 export const MyBookingsPage = () => {
   const { user } = useAuth();
@@ -121,7 +122,7 @@ export const MyBookingsPage = () => {
           <LoadingSpinner message="Fetching your service history..." />
         ) : bookings.length === 0 ? (
           <EmptyState
-            icon="📅"
+            icon={Calendar}
             title={`No ${statusFilter !== 'ALL' ? statusFilter.toLowerCase() : ''} bookings found`}
             description="You don't have any service appointments under this filter."
           />
@@ -162,14 +163,14 @@ export const MyBookingsPage = () => {
                   type="button"
                   onClick={() => setReviewRating(star)}
                   style={{
-                    fontSize: '1.75rem',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
+                    padding: '4px',
                     color: star <= reviewRating ? '#F59E0B' : 'var(--neutral-300)',
                   }}
                 >
-                  ★
+                  <Star size={24} fill={star <= reviewRating ? '#F59E0B' : 'none'} color="#F59E0B" />
                 </button>
               ))}
               <span className="font-bold text-sm ml-2">({reviewRating} / 5 Stars)</span>

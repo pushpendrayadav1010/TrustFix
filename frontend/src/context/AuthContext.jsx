@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { mockUsers } from '../mock/users';
-import { mockProviders } from '../mock/providers';
+import { providerService } from '../services/providerService';
 
 const AuthContext = createContext(null);
 
@@ -53,6 +52,34 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  useEffect(() => {
+    // On app initialization or refresh: if authenticated provider, fetch fresh profile from MySQL
+    if (token && user?.id && user.role === 'PROVIDER') {
+      providerService.getProviderByUserId(user.id)
+        .then((freshProfile) => {
+          if (freshProfile) {
+            setProviderProfile(freshProfile);
+          }
+        })
+        .catch((err) => {
+          console.warn('[AuthContext] Provider profile not yet created on backend:', err);
+          setProviderProfile(null);
+        });
+    }
+  }, [user?.id, user?.role, token]);
+
+  const refreshProviderProfile = async () => {
+    if (!user?.id || user.role !== 'PROVIDER') return null;
+    try {
+      const fresh = await providerService.getProviderByUserId(user.id);
+      setProviderProfile(fresh);
+      return fresh;
+    } catch (e) {
+      console.warn('[AuthContext] Failed to refresh provider profile:', e);
+      return null;
+    }
+  };
+
   const login = async ({ email, password }) => {
     setLoading(true);
     try {
@@ -65,11 +92,11 @@ export const AuthProvider = ({ children }) => {
           const realProfile = await providerService.getProviderByUserId(res.user.id);
           setProviderProfile(realProfile);
         } catch (pErr) {
-          console.warn('Could not fetch provider profile for user:', res.user.id, pErr);
-          if (res.providerProfile) setProviderProfile(res.providerProfile);
+          console.warn('[AuthContext] Provider profile not found for user ID:', res.user.id);
+          setProviderProfile(null);
         }
-      } else if (res.providerProfile) {
-        setProviderProfile(res.providerProfile);
+      } else {
+        setProviderProfile(null);
       }
 
       return res;
@@ -90,10 +117,10 @@ export const AuthProvider = ({ children }) => {
           const realProfile = await providerService.getProviderByUserId(res.user.id);
           setProviderProfile(realProfile);
         } catch (pErr) {
-          if (res.providerProfile) setProviderProfile(res.providerProfile);
+          setProviderProfile(null);
         }
-      } else if (res.providerProfile) {
-        setProviderProfile(res.providerProfile);
+      } else {
+        setProviderProfile(null);
       }
 
       return res;
@@ -162,6 +189,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUser,
         updateProvider,
+        refreshProviderProfile,
         switchDemoPersona
       }}
     >

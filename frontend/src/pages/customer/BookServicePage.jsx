@@ -9,11 +9,12 @@ import { MapView } from '../../components/map/MapView';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
 import { formatCurrency } from '../../utils/formatters';
+import { ShieldCheck, CheckCircle2, Clock, MapPin, Calendar, Star, ChevronRight } from 'lucide-react';
 
 export const BookServicePage = () => {
   const [searchParams] = useSearchParams();
-  const initialProviderId = searchParams.get('providerId') || '101';
-  const initialServiceId = searchParams.get('serviceId') || '1';
+  const initialProviderId = searchParams.get('providerId') || null;
+  const initialServiceId = searchParams.get('serviceId') || null;
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -49,24 +50,39 @@ export const BookServicePage = () => {
       setLoading(true);
       setError(null);
       try {
-        const userId = user?.id || 4;
-
-        const [prov, serv, fetchedAddrs] = await Promise.all([
-          providerService.getProviderById(initialProviderId).catch(() => null),
-          categoryService.getServiceById(initialServiceId).catch(() => categoryService.getServices().then(s => s[0])),
-          userService.getAddresses(userId)
+        const [fetchedServices, fetchedProviders, fetchedAddrs] = await Promise.all([
+          categoryService.getServices(),
+          providerService.getVerifiedProviders(),
+          user?.id ? userService.getAddresses(user.id).catch(() => []) : Promise.resolve([])
         ]);
+
+        let targetService = null;
+        if (initialServiceId) {
+          targetService = fetchedServices.find(s => String(s.id) === String(initialServiceId)) || await categoryService.getServiceById(initialServiceId).catch(() => null);
+        }
+        if (!targetService && fetchedServices.length > 0) {
+          targetService = fetchedServices[0];
+        }
+
+        let targetProvider = null;
+        if (initialProviderId) {
+          targetProvider = fetchedProviders.find(p => String(p.id) === String(initialProviderId)) || await providerService.getProviderById(initialProviderId).catch(() => null);
+        }
+        if (!targetProvider && fetchedProviders.length > 0) {
+          targetProvider = fetchedProviders[0];
+        }
 
         let userAddrs = fetchedAddrs;
         if (!userAddrs || userAddrs.length === 0) {
           try {
+            const userId = user?.id || 4;
             const createdAddr = await userService.addAddress(userId, {
-              flat: '101, Service Apartment',
-              street: 'Andheri West',
-              city: 'Mumbai',
+              flat: '101, Palm Beach Residency',
+              street: 'Sector 15, Vashi',
+              city: 'Navi Mumbai',
               state: 'Maharashtra',
-              pincode: '400053',
-              landmark: 'Home Address'
+              pincode: '400703',
+              landmark: 'Near Bus Depot'
             });
             userAddrs = [createdAddr];
           } catch (addrErr) {
@@ -74,8 +90,8 @@ export const BookServicePage = () => {
           }
         }
 
-        setProvider(prov || { id: null, name: 'Assigned Specialist', rating: 4.9, reviewCount: 24, experience: 5, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' });
-        setService(serv);
+        setProvider(targetProvider || null);
+        setService(targetService);
         setAddresses(userAddrs || []);
         if (userAddrs && userAddrs.length > 0) {
           const defaultAddr = userAddrs.find(a => a.isDefault) || userAddrs[0];
@@ -118,9 +134,13 @@ export const BookServicePage = () => {
         targetAddressId = newAddr.id;
       }
 
+      if (!service?.id) {
+        throw new Error('Please select a valid service to book.');
+      }
+
       const newBooking = await bookingService.createBooking({
-        customerId: userId,
-        serviceId: service?.id || 1,
+        customerId: user?.id,
+        serviceId: service.id,
         addressId: targetAddressId,
         providerId: provider?.id,
         date,
@@ -154,8 +174,12 @@ export const BookServicePage = () => {
         
         {/* Header */}
         <div className="mb-6">
-          <nav style={{ marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--neutral-500)' }}>
-            <Link to="/customer/dashboard">Dashboard</Link> <span>›</span> <Link to="/customer/browse">Services</Link> <span>›</span> <span>Book Appointment</span>
+          <nav style={{ marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Link to="/customer/dashboard">Dashboard</Link>
+            <ChevronRight size={14} />
+            <Link to="/customer/browse">Services</Link>
+            <ChevronRight size={14} />
+            <span style={{ color: 'var(--neutral-800)', fontWeight: 600 }}>Book Appointment</span>
           </nav>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
             Schedule Verified Service Appointment
@@ -172,43 +196,50 @@ export const BookServicePage = () => {
             <div className="flex flex-col gap-6">
               
               {/* Provider & Service Summary Card */}
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-muted uppercase">Selected Professional</span>
-                  <span className="badge badge-verified">✓ Background Verified</span>
-                </div>
+              {provider && (
+                <div className="card" style={{ padding: '1.25rem' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-muted uppercase">Selected Professional</span>
+                    <span className="badge badge-verified">
+                      <ShieldCheck size={12} strokeWidth={2.2} />
+                      Background Verified
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <img
-                    src={provider.avatar}
-                    alt={provider.name}
-                    style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
-                  />
-                  <div>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-                      {provider.name}
-                    </h4>
-                    <p className="text-xs text-muted font-semibold" style={{ color: 'var(--primary-700)' }}>
-                      {provider.companyName || `${provider.service} Specialist`}
-                    </p>
-                    <p className="text-xs text-muted">
-                      ★ {provider.rating} ({provider.reviewCount} reviews) • {provider.experience} yrs exp
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={provider.avatar}
+                      alt={provider.name}
+                      style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
+                    />
+                    <div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                        {provider.name}
+                      </h4>
+                      <p className="text-xs text-muted font-semibold" style={{ color: 'var(--primary-700)' }}>
+                        {provider.companyName || `${provider.service} Specialist`}
+                      </p>
+                      <p className="text-xs text-muted flex items-center gap-1">
+                        <Star size={11} fill="#F59E0B" color="#F59E0B" />
+                        <span>{provider.rating} ({provider.reviewCount} reviews) • {provider.experience} yrs exp</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', borderTop: '1px solid var(--neutral-200)', paddingTop: '0.75rem' }}>
+                    <span className="text-xs text-muted block">Service Name</span>
+                    <strong style={{ fontSize: '0.95rem', color: 'var(--neutral-900)' }}>
+                      {service?.name || `${provider.service} Standard Inspection`}
+                    </strong>
                   </div>
                 </div>
-
-                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--neutral-200)', paddingTop: '0.75rem' }}>
-                  <span className="text-xs text-muted block">Service Name</span>
-                  <strong style={{ fontSize: '0.95rem', color: 'var(--neutral-900)' }}>
-                    {service?.name || `${provider.service} Standard Inspection`}
-                  </strong>
-                </div>
-              </div>
+              )}
 
               {/* Step 1: Date & Time Slot */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>
-                  1. Choose Date & Time Slot
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={18} color="var(--primary-700)" />
+                  <span>1. Choose Date & Time Slot</span>
                 </h4>
 
                 <div className="form-group mb-4">
@@ -230,10 +261,11 @@ export const BookServicePage = () => {
                       <button
                         key={slot}
                         type="button"
-                        className={`btn btn-sm ${time === slot ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`btn btn-sm ${time === slot ? 'btn-primary' : 'btn-secondary'} flex items-center justify-center gap-1`}
                         onClick={() => setTime(slot)}
                       >
-                        🕒 {slot}
+                        <Clock size={12} />
+                        <span>{slot}</span>
                       </button>
                     ))}
                   </div>
@@ -243,8 +275,9 @@ export const BookServicePage = () => {
               {/* Step 2: Address Selection & Location Preview */}
               <div className="card" style={{ padding: '1.5rem' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-                    2. Service Location Address
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MapPin size={18} color="var(--primary-700)" />
+                    <span>2. Service Location Address</span>
                   </h4>
                   <Link to="/customer/addresses" className="text-xs font-semibold" style={{ color: 'var(--primary-700)' }}>
                     + Manage Addresses
@@ -287,9 +320,12 @@ export const BookServicePage = () => {
                 </div>
 
                 {/* Map Location Preview for Selected Address */}
-                {selectedAddress && (
+                {selectedAddress && provider && (
                   <div>
-                    <span className="text-xs text-muted block mb-2 font-semibold">📍 Location Map Preview:</span>
+                    <span className="text-xs text-muted block mb-2 font-semibold flex items-center gap-1">
+                      <MapPin size={12} color="var(--primary-700)" />
+                      <span>Location Map Preview:</span>
+                    </span>
                     <div style={{ height: '180px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                       <MapView
                         locations={[{ id: 99, name: 'Service Location', latitude: selectedAddress.latitude, longitude: selectedAddress.longitude, service: provider.service, verified: true }]}
@@ -373,7 +409,8 @@ export const BookServicePage = () => {
                   }}
                 >
                   <div className="flex items-center gap-1 font-bold mb-1">
-                    <span>✓</span> Zero Advance Payment Required
+                    <CheckCircle2 size={14} color="var(--success-600)" />
+                    <span>Zero Advance Payment Required</span>
                   </div>
                   <p style={{ margin: 0, color: 'var(--neutral-600)' }}>
                     Pay securely via UPI, Card, or Cash only after service completion & your full satisfaction.

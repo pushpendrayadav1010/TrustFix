@@ -1,34 +1,85 @@
-import { mockLocations, defaultMapCenter } from '../mock/locations';
+import { providerService } from './providerService';
 
-const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
+const defaultMapCenter = {
+  latitude: 19.1136,
+  longitude: 72.8697,
+  city: "Mumbai Metropolitan Region",
+  zoom: 11
+};
 
 export const locationService = {
   getLocations: async () => {
-    await delay();
-    return [...mockLocations];
+    try {
+      const providers = await providerService.getProviders();
+      return providers.map(p => ({
+        id: p.id,
+        providerId: p.id,
+        name: p.name || p.companyName,
+        service: p.service || 'Home Service',
+        verified: p.verificationStatus === 'VERIFIED',
+        latitude: p.latitude || 19.1136,
+        longitude: p.longitude || 72.8697,
+        serviceRadiusKm: p.serviceRadiusKm || 25,
+        rating: p.rating || 4.9,
+        startingPrice: p.startingPrice || 499,
+        serviceArea: p.serviceArea || `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`
+      }));
+    } catch (e) {
+      return [];
+    }
   },
 
   getProviderLocations: async (filters = {}) => {
-    await delay();
-    let locations = [...mockLocations];
-    if (filters.service) {
-      locations = locations.filter(l => l.service.toLowerCase().includes(filters.service.toLowerCase()));
+    try {
+      const providers = await providerService.getProviders({
+        category: filters.service || filters.category,
+        verifiedOnly: filters.verifiedOnly !== false,
+        onlyAvailable: filters.onlyAvailable,
+        search: filters.search
+      });
+
+      return providers.map(p => ({
+        id: p.id,
+        providerId: p.id,
+        name: p.name || p.companyName,
+        service: p.service || 'Home Service',
+        verified: p.verificationStatus === 'VERIFIED',
+        latitude: p.latitude || 19.1136,
+        longitude: p.longitude || 72.8697,
+        serviceRadiusKm: p.serviceRadiusKm || 25,
+        rating: p.rating || 4.9,
+        startingPrice: p.startingPrice || 499,
+        serviceArea: p.serviceArea || `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`
+      }));
+    } catch (e) {
+      return [];
     }
-    if (filters.verifiedOnly) {
-      locations = locations.filter(l => l.verified);
-    }
-    return locations;
   },
 
   getLocationByProviderId: async (providerId) => {
-    await delay();
-    const loc = mockLocations.find(l => l.providerId === Number(providerId));
-    return loc || {
-      latitude: defaultMapCenter.latitude,
-      longitude: defaultMapCenter.longitude,
-      serviceArea: "Mumbai Metropolitan Region",
-      serviceRadiusKm: 10
-    };
+    try {
+      const p = await providerService.getProviderById(providerId);
+      return {
+        id: p.id,
+        providerId: p.id,
+        name: p.name || p.companyName,
+        service: p.service || 'Home Service',
+        verified: p.verificationStatus === 'VERIFIED',
+        latitude: p.latitude || defaultMapCenter.latitude,
+        longitude: p.longitude || defaultMapCenter.longitude,
+        serviceRadiusKm: p.serviceRadiusKm || 25,
+        rating: p.rating || 4.9,
+        startingPrice: p.startingPrice || 499,
+        serviceArea: p.serviceArea || `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`
+      };
+    } catch (e) {
+      return {
+        latitude: defaultMapCenter.latitude,
+        longitude: defaultMapCenter.longitude,
+        serviceArea: "Mumbai Metropolitan Region",
+        serviceRadiusKm: 25
+      };
+    }
   },
 
   getDefaultCenter: () => defaultMapCenter,

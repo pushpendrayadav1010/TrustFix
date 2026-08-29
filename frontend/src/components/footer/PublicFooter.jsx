@@ -1,27 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const PublicFooter = () => {
   return (
     <footer className="footer">
       <div className="container">
-        <div className="grid grid-cols-1" style={{ gap: '2.5rem' }}>
+        <div className="grid grid-cols-1">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2.5rem' }}>
             
             {/* Column 1: Brand & Promise */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="brand-icon" style={{ width: '30px', height: '30px', fontSize: '1rem' }}>
-                  🛡️
+                <div className="brand-icon" style={{ width: '32px', height: '32px' }}>
+                  <ShieldCheck size={18} strokeWidth={2.2} />
                 </div>
-                <h4 style={{ color: 'var(--white)', margin: 0 }}>TrustFix</h4>
+                <h4 style={{ color: 'var(--white)', margin: 0, fontWeight: 800 }}>TrustFix</h4>
               </div>
               <p style={{ color: 'var(--neutral-400)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: 1.6 }}>
-                The trusted home-service marketplace. Connecting discerning homeowners with verified, background-checked, and skilled professionals.
+                The verified home-service marketplace. Connecting discerning homeowners with verified, background-checked, and certified repair specialists.
               </p>
               <div className="flex items-center gap-2">
                 <span className="badge badge-verified" style={{ fontSize: '11px' }}>
-                  ✓ 100% Background Checked
+                  <CheckCircle2 size={12} strokeWidth={2} />
+                  100% Background Checked
                 </span>
               </div>
             </div>
@@ -30,12 +32,12 @@ export const PublicFooter = () => {
             <div>
               <h5>Popular Services</h5>
               <ul className="footer-links">
-                <li><Link to="/services/electrical" className="footer-link">Electrical Repairs & Wiring</Link></li>
-                <li><Link to="/services/plumbing" className="footer-link">Plumbing & Leak Control</Link></li>
-                <li><Link to="/services/cleaning" className="footer-link">Full Home Deep Cleaning</Link></li>
-                <li><Link to="/services/ac-repair" className="footer-link">AC Servicing & Gas Top-Up</Link></li>
-                <li><Link to="/services/appliance-repair" className="footer-link">Washing Machine & Fridge Repair</Link></li>
-                <li><Link to="/services/carpentry" className="footer-link">Furniture & Lock Carpentry</Link></li>
+                <li><Link to="/services" className="footer-link">Electrical Repairs & Wiring</Link></li>
+                <li><Link to="/services" className="footer-link">Plumbing & Leak Control</Link></li>
+                <li><Link to="/services" className="footer-link">Full Home Deep Cleaning</Link></li>
+                <li><Link to="/services" className="footer-link">AC Servicing & Gas Top-Up</Link></li>
+                <li><Link to="/services" className="footer-link">Washing Machine & Fridge Repair</Link></li>
+                <li><Link to="/services" className="footer-link">Furniture & Lock Carpentry</Link></li>
               </ul>
             </div>
 
@@ -57,7 +59,12 @@ export const PublicFooter = () => {
               <ul className="footer-links">
                 <li><Link to="/login" className="footer-link">Customer Login</Link></li>
                 <li><Link to="/register" className="footer-link">Create Free Account</Link></li>
-                <li><Link to="/register?role=PROVIDER" className="footer-link" style={{ color: 'var(--primary-300, #93C5FD)', fontWeight: 600 }}>Join as Service Provider →</Link></li>
+                <li>
+                  <Link to="/register?role=PROVIDER" className="footer-link" style={{ color: 'var(--primary-300)', fontWeight: 600 }}>
+                    <span>Join as Service Provider</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </li>
                 <li><Link to="/services" className="footer-link">Service Directory</Link></li>
               </ul>
             </div>

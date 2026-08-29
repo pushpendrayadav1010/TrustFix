@@ -8,6 +8,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
 import { formatCurrency } from '../../utils/formatters';
+import { ClipboardList, Plus, Trash2 } from 'lucide-react';
 
 export const MyServicesPage = () => {
   const { user, providerProfile, updateProvider } = useAuth();
@@ -33,15 +34,20 @@ export const MyServicesPage = () => {
         updateProvider(activeProfile);
       }
 
-      const targetId = activeProfile?.id || 1;
-      const [provServices, catalog] = await Promise.all([
-        providerService.getProviderServices(targetId),
-        categoryService.getServices()
-      ]);
-      setServices(provServices || []);
-      setCatalogServices(catalog || []);
-      if (catalog && catalog.length > 0) {
-        setFormData(prev => ({ ...prev, serviceId: String(catalog[0].id) }));
+      if (activeProfile?.id) {
+        const [provServices, catalog] = await Promise.all([
+          providerService.getProviderServices(activeProfile.id),
+          categoryService.getServices()
+        ]);
+        setServices(provServices || []);
+        setCatalogServices(catalog || []);
+        if (catalog && catalog.length > 0) {
+          setFormData(prev => ({ ...prev, serviceId: String(catalog[0].id) }));
+        }
+      } else {
+        const catalog = await categoryService.getServices();
+        setServices([]);
+        setCatalogServices(catalog || []);
       }
     } catch (err) {
       console.error('Failed to fetch provider services:', err);
@@ -56,7 +62,7 @@ export const MyServicesPage = () => {
   }, [user, providerProfile?.id]);
 
   const handleOpenAdd = () => {
-    const defaultServiceId = catalogServices.length > 0 ? String(catalogServices[0].id) : '1';
+    const defaultServiceId = catalogServices.length > 0 ? String(catalogServices[0].id) : '';
     setFormData({
       serviceId: defaultServiceId,
       price: '499',
@@ -74,14 +80,20 @@ export const MyServicesPage = () => {
       let targetId = providerProfile?.id;
       if (!targetId && user?.id) {
         const fetched = await providerService.getProviderByUserId(user.id);
-        targetId = fetched.id;
+        targetId = fetched?.id;
       }
 
-      await providerService.addProviderService(targetId || 1, Number(formData.serviceId), Number(formData.price));
+      if (!targetId) {
+        alert('Please complete your provider profile setup before adding services.');
+        return;
+      }
+
+      await providerService.addProviderService(targetId, Number(formData.serviceId), Number(formData.price));
       setModalOpen(false);
       fetchServices();
     } catch (err) {
       console.error('Error adding provider service:', err);
+      alert('Failed to add service: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -91,11 +103,13 @@ export const MyServicesPage = () => {
         let targetId = providerProfile?.id;
         if (!targetId && user?.id) {
           const fetched = await providerService.getProviderByUserId(user.id);
-          targetId = fetched.id;
+          targetId = fetched?.id;
         }
 
+        if (!targetId) return;
+
         const serviceIdToDelete = serv.serviceId || serv.id;
-        await providerService.deleteProviderService(targetId || 1, serviceIdToDelete);
+        await providerService.deleteProviderService(targetId, serviceIdToDelete);
         fetchServices();
       } catch (err) {
         console.error('Error deleting provider service:', err);
@@ -109,8 +123,9 @@ export const MyServicesPage = () => {
         title="My Trade Services & Catalog"
         subtitle="Configure the specific jobs and installation tasks you offer to TrustFix customers."
         actions={
-          <Button variant="primary" size="sm" onClick={handleOpenAdd}>
-            + Add New Service
+          <Button variant="primary" size="sm" onClick={handleOpenAdd} className="flex items-center gap-1">
+            <Plus size={15} />
+            <span>Add New Service</span>
           </Button>
         }
       />
@@ -120,10 +135,15 @@ export const MyServicesPage = () => {
           <LoadingSpinner message="Loading your service catalog..." />
         ) : services.length === 0 ? (
           <EmptyState
-            icon="📋"
+            icon={ClipboardList}
             title="No services configured"
             description="Add the tasks and repairs you specialize in to start receiving customer requests."
-            action={<Button variant="primary" onClick={handleOpenAdd}>+ Add First Service</Button>}
+            action={
+              <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
+                <Plus size={15} />
+                <span>Add First Service</span>
+              </Button>
+            }
           />
         ) : (
           <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
@@ -150,11 +170,12 @@ export const MyServicesPage = () => {
                   <span className="text-xs text-muted">Status: <strong style={{ color: 'var(--success-700)' }}>Active</strong></span>
                   <button
                     type="button"
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-sm btn-secondary flex items-center gap-1"
                     style={{ color: 'var(--danger-600)' }}
                     onClick={() => handleDeleteService(serv)}
                   >
-                    Remove
+                    <Trash2 size={12} />
+                    <span>Remove</span>
                   </button>
                 </div>
               </div>

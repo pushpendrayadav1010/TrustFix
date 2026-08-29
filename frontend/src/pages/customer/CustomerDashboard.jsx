@@ -9,6 +9,8 @@ import { StatCard } from '../../components/dashboard/StatCard';
 import { BookingCard } from '../../components/booking/BookingCard';
 import { ProviderCard } from '../../components/provider/ProviderCard';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { CategoryIcon } from '../../utils/categoryIcons';
+import { Calendar, CheckCircle2, ShieldCheck, Clock, ArrowRight, ClipboardList } from 'lucide-react';
 
 export const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -22,11 +24,11 @@ export const CustomerDashboard = () => {
       setLoading(true);
       try {
         const [myBookings, recProvs, cats] = await Promise.all([
-          bookingService.getCustomerBookings(user?.id || 1),
+          user?.id ? bookingService.getCustomerBookings(user.id) : Promise.resolve([]),
           providerService.getFeaturedProviders(),
           categoryService.getCategories()
         ]);
-        setBookings(myBookings);
+        setBookings(myBookings || []);
         setRecommendedProviders(recProvs.slice(0, 3));
         setCategories(cats.slice(0, 6));
       } finally {
@@ -34,7 +36,7 @@ export const CustomerDashboard = () => {
       }
     };
     fetchDashboardData();
-  }, [user]);
+  }, [user?.id]);
 
   const upcomingBooking = bookings.find(b => b.status === 'CONFIRMED' || b.status === 'PENDING' || b.status === 'IN_PROGRESS');
   const completedCount = bookings.filter(b => b.status === 'COMPLETED').length;
@@ -43,7 +45,7 @@ export const CustomerDashboard = () => {
   return (
     <div className="customer-dashboard">
       <DashboardHeader
-        title={`Hello, ${user?.name?.split(' ')[0] || 'User'} 👋`}
+        title={`Hello, ${user?.name?.split(' ')[0] || 'User'}`}
         subtitle="Manage your home services, track active appointments, and discover verified local pros."
       />
 
@@ -58,21 +60,21 @@ export const CustomerDashboard = () => {
                 title="Active Bookings"
                 value={activeCount}
                 subtitle="Appointments in progress or pending"
-                icon="📅"
+                icon={<Calendar size={20} />}
                 color="primary"
               />
               <StatCard
                 title="Completed Services"
                 value={completedCount}
                 subtitle="Verified jobs finished"
-                icon="✓"
+                icon={<CheckCircle2 size={20} />}
                 color="success"
               />
               <StatCard
                 title="Verified Pros Nearby"
                 value="24+"
                 subtitle="Available in your neighborhood"
-                icon="🛡️"
+                icon={<ShieldCheck size={20} />}
                 color="primary"
               />
             </div>
@@ -82,13 +84,14 @@ export const CustomerDashboard = () => {
               <div className="card mb-8" style={{ borderLeft: '4px solid var(--primary-700)', backgroundColor: 'var(--white)' }}>
                 <div className="card-header flex items-center justify-between" style={{ backgroundColor: 'var(--primary-50)' }}>
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                    <Clock size={16} color="var(--primary-700)" />
                     <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-800)', margin: 0 }}>
                       Upcoming Service Appointment
                     </h4>
                   </div>
                   <Link to={`/customer/bookings/${upcomingBooking.id}`} className="btn btn-sm btn-primary">
-                    Track Live Timeline →
+                    <span>Track Live Timeline</span>
+                    <ArrowRight size={13} />
                   </Link>
                 </div>
 
@@ -107,8 +110,9 @@ export const CustomerDashboard = () => {
                         <p className="text-xs text-muted">
                           Technician: <strong>{upcomingBooking.providerName}</strong> ({upcomingBooking.providerPhone})
                         </p>
-                        <p className="text-xs" style={{ color: 'var(--neutral-700)', marginTop: '2px' }}>
-                          📅 <strong>{upcomingBooking.date}</strong> at <strong>{upcomingBooking.time}</strong>
+                        <p className="text-xs flex items-center gap-1" style={{ color: 'var(--neutral-700)', marginTop: '2px' }}>
+                          <Calendar size={12} color="var(--primary-700)" />
+                          <span><strong>{upcomingBooking.date}</strong> at <strong>{upcomingBooking.time}</strong></span>
                         </p>
                       </div>
                     </div>
@@ -130,7 +134,8 @@ export const CustomerDashboard = () => {
                   Quick Book Services
                 </h3>
                 <Link to="/customer/browse" className="btn btn-sm btn-secondary">
-                  Browse All →
+                  <span>Browse All</span>
+                  <ArrowRight size={13} />
                 </Link>
               </div>
 
@@ -142,7 +147,20 @@ export const CustomerDashboard = () => {
                     className="card card-hoverable"
                     style={{ padding: '1.25rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
-                    <span style={{ fontSize: '1.75rem' }}>{cat.icon}</span>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--primary-50)',
+                        color: 'var(--primary-800)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <CategoryIcon categoryName={cat.name} slug={cat.slug} size={18} />
+                    </div>
                     <div>
                       <h5 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--neutral-900)', margin: 0 }}>{cat.name}</h5>
                       <span className="text-xs text-muted">Book now</span>
@@ -168,7 +186,7 @@ export const CustomerDashboard = () => {
 
                 {bookings.length === 0 ? (
                   <EmptyState
-                    icon="📋"
+                    icon={ClipboardList}
                     title="No bookings yet"
                     description="Book your first verified electrician, plumber, or cleaner in seconds."
                     action={<Link to="/customer/browse" className="btn btn-primary">Book a Service</Link>}
@@ -189,7 +207,8 @@ export const CustomerDashboard = () => {
                     Top Rated In Your Area
                   </h3>
                   <Link to="/customer/browse" className="btn btn-sm btn-light">
-                    Explore Map →
+                    <span>Explore Map</span>
+                    <ArrowRight size={13} />
                   </Link>
                 </div>
 

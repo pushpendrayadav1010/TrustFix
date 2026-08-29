@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 
 export const DashboardHeader = ({ title, subtitle, actions }) => {
   const { user, role, providerProfile } = useAuth();
@@ -11,7 +12,7 @@ export const DashboardHeader = ({ title, subtitle, actions }) => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
           {title}
         </h2>
-        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted" style={{ margin: 0 }}>{subtitle}</p>}
       </div>
 
       <div className="flex items-center gap-3">
@@ -19,7 +20,8 @@ export const DashboardHeader = ({ title, subtitle, actions }) => {
 
         {role === 'CUSTOMER' && (
           <Link to="/customer/browse" className="btn btn-sm btn-primary">
-            + Book Service
+            <Plus size={14} strokeWidth={2.5} />
+            <span>Book Service</span>
           </Link>
         )}
 

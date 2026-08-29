@@ -4,6 +4,7 @@ import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { formatCurrency } from '../../utils/formatters';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const ManagePricingPage = () => {
   const { providerProfile, updateProvider } = useAuth();
@@ -37,14 +38,14 @@ export const ManagePricingPage = () => {
             </h3>
 
             {saved && (
-              <div className="alert alert-success mb-4">
-                <span>✓</span>
+              <div className="alert alert-success mb-4 flex items-center gap-2">
+                <CheckCircle2 size={18} />
                 <span>Pricing rates updated successfully!</span>
               </div>
             )}
 
             <form onSubmit={handleSave}>
-              <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 
                 <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--neutral-50)' }}>
                   <span className="text-xs text-muted block uppercase font-bold mb-1">Standard Base Visit</span>
@@ -88,7 +89,10 @@ export const ManagePricingPage = () => {
                   color: 'var(--primary-900)',
                 }}
               >
-                <h5 style={{ fontWeight: 700, marginBottom: '4px' }}>🛡️ TrustFix Fair Pricing Policy</h5>
+                <h5 style={{ fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldCheck size={16} color="var(--primary-700)" />
+                  <span>TrustFix Fair Pricing Policy</span>
+                </h5>
                 <ul style={{ paddingLeft: '1.2rem', margin: 0, lineHeight: 1.6, fontSize: '0.8125rem' }}>
                   <li>All replacement hardware and materials must be billed to the customer at actual MRP with receipt.</li>
                   <li>Technicians are protected with guaranteed payout on completed bookings.</li>

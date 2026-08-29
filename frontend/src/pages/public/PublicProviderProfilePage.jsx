@@ -8,6 +8,7 @@ import { VerificationBadge } from '../../components/common/VerificationBadge';
 import { MapView } from '../../components/map/MapView';
 import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { ShieldCheck, MapPin, CheckCircle2, ArrowRight, ChevronRight, Award } from 'lucide-react';
 
 export const PublicProviderProfilePage = () => {
   const { providerId } = useParams();
@@ -53,8 +54,12 @@ export const PublicProviderProfilePage = () => {
       <div className="container">
         
         {/* Breadcrumb */}
-        <nav style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: 'var(--neutral-500)' }}>
-          <Link to="/">Home</Link> <span>›</span> <Link to="/browse">Providers</Link> <span>›</span> <span>{provider.name}</span>
+        <nav style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Link to="/">Home</Link>
+          <ChevronRight size={14} />
+          <Link to="/browse">Providers</Link>
+          <ChevronRight size={14} />
+          <span style={{ color: 'var(--neutral-800)', fontWeight: 600 }}>{provider.name}</span>
         </nav>
 
         {/* Hero Card */}
@@ -113,10 +118,11 @@ export const PublicProviderProfilePage = () => {
                 </div>
 
                 <Link
-                  to={`/customer/book?providerId=${provider.id}&serviceId=${provider.categoryId || 1}`}
+                  to={`/customer/book?providerId=${provider.id}`}
                   className="btn btn-lg btn-primary"
                 >
-                  ⚡ Book This Provider
+                  <span>Book This Provider</span>
+                  <ArrowRight size={16} />
                 </Link>
               </div>
 
@@ -230,13 +236,14 @@ export const PublicProviderProfilePage = () => {
             {/* Verification Documents Checklist */}
             {provider.documentsVerified && (
               <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--neutral-200)', paddingTop: '1rem' }}>
-                <h5 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--success-800)' }}>
-                  ✓ Verified Credentials on File
+                <h5 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--success-800)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldCheck size={16} color="var(--success-600)" />
+                  <span>Verified Credentials on File</span>
                 </h5>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {provider.documentsVerified.map((doc, idx) => (
                     <li key={idx} className="text-xs text-muted flex items-center gap-1">
-                      <span style={{ color: 'var(--success-600)', fontWeight: 700 }}>✓</span>
+                      <CheckCircle2 size={12} color="var(--success-600)" />
                       <span>{doc}</span>
                     </li>
                   ))}
@@ -250,8 +257,9 @@ export const PublicProviderProfilePage = () => {
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
               Service Area & Operational Radius
             </h3>
-            <p className="text-xs text-muted mb-3">
-              Servicing: <strong>{provider.serviceArea}</strong> (~{providerLocation?.serviceRadiusKm || 12} km radius)
+            <p className="text-xs text-muted mb-3 flex items-center gap-1">
+              <MapPin size={13} color="var(--primary-700)" />
+              <span>Servicing: <strong>{provider.serviceArea}</strong> (~{providerLocation?.serviceRadiusKm || 12} km radius)</span>
             </p>
 
             <div style={{ flex: 1, minHeight: '280px', marginBottom: '1rem', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
@@ -269,8 +277,9 @@ export const PublicProviderProfilePage = () => {
                 <span className="text-xs text-muted block mb-1">Covered Neighborhoods:</span>
                 <div className="flex flex-wrap gap-1">
                   {provider.serviceAreasList.map((area, idx) => (
-                    <span key={idx} className="badge badge-cancelled" style={{ fontSize: '11px' }}>
-                      📍 {area}
+                    <span key={idx} className="badge badge-cancelled" style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <MapPin size={10} />
+                      {area}
                     </span>
                   ))}
                 </div>
@@ -315,7 +324,8 @@ export const PublicProviderProfilePage = () => {
                       />
                       <span className="font-bold text-sm">{rev.customerName}</span>
                       <span className="badge badge-verified" style={{ fontSize: '10px', padding: '1px 5px' }}>
-                        ✓ Verified Booking
+                        <CheckCircle2 size={10} />
+                        Verified Booking
                       </span>
                     </div>
 

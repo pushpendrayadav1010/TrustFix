@@ -24,32 +24,41 @@
   align-items: center;
   gap: 0.625rem;
   font-size: var(--font-size-xl);
-  font-weight: 800;
+  font-weight: var(--font-weight-extrabold);
+  color: var(--primary-900);
+  letter-spacing: -0.025em;
+  text-decoration: none;
+}
+
+.navbar-brand:hover {
   color: var(--primary-800);
-  letter-spacing: -0.02em;
 }
 
 .brand-icon {
-  width: 34px;
-  height: 34px;
-  background-color: var(--primary-800);
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-700) 100%);
   color: var(--white);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.125rem;
+  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
 }
 
 .brand-badge {
   font-size: 10px;
   background-color: var(--success-100);
   color: var(--success-800);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  border: 1px solid var(--success-200);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .nav-links {
@@ -67,14 +76,18 @@
 
 .nav-link {
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--neutral-700);
   transition: color var(--transition-fast);
   padding: 0.5rem 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-link:hover, .nav-link.active {
-  color: var(--primary-800);
+  color: var(--primary-700);
 }
 
 .nav-actions {
@@ -85,12 +98,21 @@
 
 .mobile-menu-toggle {
   display: inline-flex;
-  padding: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   background: transparent;
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-md);
   color: var(--neutral-700);
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-menu-toggle:hover {
+  background-color: var(--neutral-100);
+  color: var(--neutral-900);
 }
 
 @media (min-width: 768px) {
@@ -113,23 +135,32 @@
   gap: var(--spacing-4);
   z-index: 99;
   border-top: 1px solid var(--neutral-200);
-  animation: fadeIn 200ms ease;
+  animation: fadeIn 150ms ease;
+  overflow-y: auto;
+}
+
+.mobile-nav .nav-link {
+  font-size: var(--font-size-base);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--neutral-150);
 }
 
 /* ============================================================
    PUBLIC FOOTER
    ============================================================ */
 .footer {
-  background-color: var(--neutral-900);
+  background-color: var(--neutral-950);
   color: var(--neutral-300);
   padding-top: var(--spacing-16);
   padding-bottom: var(--spacing-8);
   border-top: 1px solid var(--neutral-800);
+  margin-top: auto;
 }
 
 .footer h5 {
   color: var(--white);
   font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
   margin-bottom: var(--spacing-4);
 }
 
@@ -137,13 +168,17 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-25);
 }
 
 .footer-link {
   color: var(--neutral-400);
   font-size: var(--font-size-sm);
   transition: color var(--transition-fast);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .footer-link:hover {
@@ -170,7 +205,7 @@
 }
 
 /* ============================================================
-   DASHBOARD LAYOUT (Customer & Provider)
+   DASHBOARD LAYOUT (Customer & Provider & Admin)
    ============================================================ */
 .dashboard-layout {
   display: flex;
@@ -216,7 +251,7 @@
   padding: 0.625rem 0.875rem;
   color: var(--neutral-600);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   text-decoration: none;
@@ -230,7 +265,8 @@
 .sidebar-link.active {
   background-color: var(--primary-50);
   color: var(--primary-800);
-  border-left: 3px solid var(--primary-800);
+  font-weight: var(--font-weight-bold);
+  border-left: 3px solid var(--primary-700);
 }
 
 .sidebar-footer {
@@ -250,6 +286,12 @@
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--neutral-200);
+  background-color: var(--primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-800);
+  font-weight: var(--font-weight-bold);
 }
 
 .dashboard-main {

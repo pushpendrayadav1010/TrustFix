@@ -5,6 +5,7 @@ import { providerService } from '../../services/providerService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { BookingCard } from '../../components/booking/BookingCard';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { Inbox, AlertCircle, Check, X } from 'lucide-react';
 
 export const BookingRequestsPage = () => {
   const { user, providerProfile, updateProvider } = useAuth();
@@ -22,9 +23,12 @@ export const BookingRequestsPage = () => {
         updateProvider(activeProfile);
       }
 
-      const targetId = activeProfile?.id || 1;
-      const data = await bookingService.getProviderBookings(targetId, statusFilter);
-      setBookings(data);
+      if (activeProfile?.id) {
+        const data = await bookingService.getProviderBookings(activeProfile.id, statusFilter);
+        setBookings(data);
+      } else {
+        setBookings([]);
+      }
     } catch (err) {
       console.error('Failed to fetch provider bookings:', err);
       setBookings([]);
@@ -101,7 +105,7 @@ export const BookingRequestsPage = () => {
           <LoadingSpinner message="Fetching job appointments..." />
         ) : bookings.length === 0 ? (
           <EmptyState
-            icon="📬"
+            icon={Inbox}
             title="No job bookings in this category"
             description="Incoming service appointments will appear here."
           />
@@ -127,27 +131,30 @@ export const BookingRequestsPage = () => {
                       gap: '8px',
                     }}
                   >
-                    <span className="text-xs font-semibold text-warning-800" style={{ color: 'var(--warning-600)' }}>
-                      ⚠️ Action Needed: Customer is awaiting your confirmation for {b.date} at {b.time}.
+                    <span className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--warning-700)' }}>
+                      <AlertCircle size={14} />
+                      Action Needed: Customer is awaiting your confirmation for {b.date} at {b.time}.
                     </span>
 
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="btn btn-sm btn-success"
+                        className="btn btn-sm btn-success flex items-center gap-1"
                         disabled={processingId === b.id}
                         onClick={() => handleAccept(b.id)}
                       >
-                        {processingId === b.id ? 'Processing...' : '✓ Accept & Confirm'}
+                        <Check size={14} />
+                        <span>{processingId === b.id ? 'Processing...' : 'Accept & Confirm'}</span>
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-secondary"
+                        className="btn btn-sm btn-secondary flex items-center gap-1"
                         style={{ color: 'var(--danger-600)' }}
                         disabled={processingId === b.id}
                         onClick={() => handleReject(b.id)}
                       >
-                        ✕ Decline
+                        <X size={14} />
+                        <span>Decline</span>
                       </button>
                     </div>
                   </div>

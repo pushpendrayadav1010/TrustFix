@@ -1,5 +1,5 @@
 /* ============================================================
-   BUTTONS
+   BUTTONS SYSTEM
    ============================================================ */
 .btn {
   display: inline-flex;
@@ -8,11 +8,11 @@
   gap: var(--spacing-2);
   padding: 0.625rem 1.25rem;
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
   line-height: 1.25;
@@ -33,22 +33,22 @@
   transform: none !important;
 }
 
-/* Primary Button - Deep Blue Gradient */
+/* Primary Button - Deep Trust Blue */
 .btn-primary {
   background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-700) 100%);
   color: var(--white);
   border-color: var(--primary-800);
-  box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+  box-shadow: 0 2px 4px rgba(30, 58, 138, 0.18);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
   border-color: var(--primary-900);
   color: var(--white);
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.35);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.28);
 }
 
-/* Secondary Button - Outline / Slate */
+/* Secondary Button - Clean Slate / White */
 .btn-secondary {
   background-color: var(--white);
   color: var(--neutral-700);
@@ -63,19 +63,19 @@
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
-/* Success Button - Verified Green */
+/* Success / Verified Button - Emerald Green */
 .btn-success {
   background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
   color: var(--white);
   border-color: var(--success-600);
-  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
 }
 
 .btn-success:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--success-700) 0%, var(--success-800) 100%);
   border-color: var(--success-700);
   color: var(--white);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.32);
 }
 
 /* Danger Button */
@@ -86,10 +86,10 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--danger-700) 0%, var(--danger-600) 100%);
+  background: linear-gradient(135deg, var(--danger-700) 0%, var(--danger-800) 100%);
 }
 
-/* Ghost / Light Blue Button */
+/* Light / Ghost Blue Button */
 .btn-light {
   background-color: var(--primary-50);
   color: var(--primary-800);
@@ -98,6 +98,7 @@
 
 .btn-light:hover:not(:disabled) {
   background-color: var(--primary-100);
+  color: var(--primary-900);
 }
 
 /* Outline Variants */
@@ -111,7 +112,7 @@
   background-color: var(--primary-800);
   color: var(--white);
   border-color: var(--primary-800);
-  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.2);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
 }
 
 .btn-outline-secondary {
@@ -157,9 +158,9 @@
 }
 
 .btn-lg {
-  padding: 0.875rem 1.75rem;
+  padding: 0.8125rem 1.625rem;
   font-size: var(--font-size-base);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
 }
 
 .btn-block {
@@ -176,16 +177,19 @@
   box-shadow: var(--shadow-xs);
   transition: box-shadow var(--transition-normal), border-color var(--transition-normal), transform var(--transition-normal);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-hoverable:hover {
-  border-color: var(--primary-200, #BFDBFE);
+  border-color: var(--primary-300);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .card-body {
   padding: var(--spacing-6);
+  flex: 1;
 }
 
 .card-header {
@@ -203,7 +207,7 @@
 }
 
 /* ============================================================
-   BADGES
+   BADGES & CHIPS
    ============================================================ */
 .badge {
   display: inline-flex;
@@ -211,27 +215,26 @@
   gap: 0.375rem;
   padding: 0.25rem 0.625rem;
   font-size: var(--font-size-xs);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-sm);
-  line-height: 1;
+  line-height: 1.2;
 }
 
-/* Verified Badge - Green */
 .badge-verified {
   background-color: var(--success-100);
   color: var(--success-800);
-  border: 1px solid rgba(22, 163, 74, 0.2);
+  border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
 .badge-pending {
   background-color: var(--warning-100);
-  color: var(--warning-600);
+  color: var(--warning-800);
   border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
 .badge-rejected {
   background-color: var(--danger-100);
-  color: var(--danger-600);
+  color: var(--danger-700);
   border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
@@ -242,20 +245,20 @@
 
 .badge-in-progress {
   background-color: var(--info-100);
-  color: var(--info-600);
+  color: var(--info-800);
 }
 
 .badge-completed {
   background-color: var(--success-100);
-  color: var(--success-700);
+  color: var(--success-800);
 }
 
 .badge-cancelled {
   background-color: var(--neutral-200);
-  color: var(--neutral-600);
+  color: var(--neutral-700);
 }
 
-/* Available Status Dot */
+/* Status Indicator Dot */
 .status-dot {
   width: 8px;
   height: 8px;
@@ -282,13 +285,14 @@
 .form-label {
   display: block;
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--neutral-800);
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-15);
 }
 
 .form-label .required {
   color: var(--danger-600);
+  margin-left: 2px;
 }
 
 .form-control {
@@ -333,6 +337,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .search-box .search-icon {
@@ -340,6 +345,9 @@
   left: 1rem;
   color: var(--neutral-400);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-box input {
@@ -362,7 +370,7 @@
 
 .rating-score {
   margin-left: 4px;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--neutral-800);
   font-size: var(--font-size-sm);
 }
@@ -379,8 +387,8 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,6 +446,9 @@
   padding: 0.25rem;
   line-height: 1;
   border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-close:hover {
@@ -511,7 +522,7 @@
 
 .timeline-content h5 {
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--neutral-900);
 }
 
@@ -557,9 +568,15 @@
 }
 
 .empty-state-icon {
-  font-size: 3rem;
-  color: var(--neutral-400);
-  margin-bottom: var(--spacing-3);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary-50);
+  color: var(--primary-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-3) auto;
 }
 
 .empty-state h4 {
@@ -571,7 +588,7 @@
 .empty-state p {
   font-size: var(--font-size-sm);
   color: var(--neutral-500);
-  max-width: 400px;
+  max-width: 420px;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: var(--spacing-4);
@@ -589,18 +606,24 @@
 
 .alert-danger {
   background-color: var(--danger-50);
-  color: var(--danger-600);
-  border: 1px solid var(--danger-100);
+  color: var(--danger-700);
+  border: 1px solid var(--danger-200);
 }
 
 .alert-success {
   background-color: var(--success-50);
-  color: var(--success-700);
-  border: 1px solid var(--success-100);
+  color: var(--success-800);
+  border: 1px solid var(--success-200);
 }
 
 .alert-info {
   background-color: var(--primary-50);
   color: var(--primary-800);
-  border: 1px solid var(--primary-100);
+  border: 1px solid var(--primary-200);
+}
+
+.alert-warning {
+  background-color: var(--warning-50);
+  color: var(--warning-800);
+  border: 1px solid var(--warning-200);
 }
