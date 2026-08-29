@@ -2,18 +2,25 @@
   /* ============================================================
      BRAND COLOR PALETTE - TRUSTFIX DEEP TRUST BLUE
      ============================================================ */
-  --primary-950: #050E1F;
-  --primary-900: #0B1E3B; /* Deep Navy Brand Tone */
+  --primary-950: #071326;
+  --primary-900: #0B1E3B; /* Deep Navy Brand Authority */
   --primary-850: #0E254A;
   --primary-800: #1E3A8A; /* Core Trust Blue */
-  --primary-700: #1D4ED8;
-  --primary-600: #2563EB; /* Action Royal Blue */
-  --primary-500: #3B82F6;
-  --primary-400: #60A5FA;
-  --primary-300: #93C5FD;
-  --primary-200: #BFDBFE;
-  --primary-100: #DBEAFE;
-  --primary-50:  #EFF6FF;
+  --primary-750: #1D4ED8;
+  --primary-700: #2563EB; /* Action Royal Blue */
+  --primary-600: #3B82F6;
+  --primary-500: #60A5FA;
+  --primary-400: #93C5FD;
+  --primary-300: #BFDBFE;
+  --primary-200: #DBEAFE;
+  --primary-100: #EFF6FF;
+  --primary-50:  #F8FAFC;
+
+  /* Aliased Core Tokens */
+  --primary: var(--primary-800);
+  --primary-dark: var(--primary-900);
+  --primary-light: var(--primary-700);
+  --primary-subtle: var(--primary-100);
 
   /* ============================================================
      VERIFIED & SUCCESS PALETTE - EMERALD TRUST GREEN
@@ -25,9 +32,14 @@
   --success-600: #059669; /* Core Verified Green */
   --success-500: #10B981;
   --success-400: #34D399;
+  --success-300: #6EE7B7;
   --success-200: #A7F3D0;
   --success-100: #D1FAE5;
   --success-50:  #ECFDF5;
+
+  --success: var(--success-600);
+  --success-light: var(--success-500);
+  --success-subtle: var(--success-50);
 
   /* ============================================================
      WARNING & ACCENT PALETTE - WARM AMBER
@@ -38,9 +50,13 @@
   --warning-600: #D97706;
   --warning-500: #F59E0B; /* Star Rating Amber */
   --warning-400: #FBBF24;
+  --warning-300: #FCD34D;
   --warning-200: #FDE68A;
   --warning-100: #FEF3C7;
   --warning-50:  #FFFBEB;
+
+  --warning: var(--warning-600);
+  --warning-subtle: var(--warning-50);
 
   /* ============================================================
      DANGER & ERROR PALETTE - CRIMSON
@@ -51,9 +67,13 @@
   --danger-600: #DC2626;
   --danger-500: #EF4444;
   --danger-400: #F87171;
+  --danger-300: #FCA5A5;
   --danger-200: #FECACA;
   --danger-100: #FEE2E2;
   --danger-50:  #FEF2F2;
+
+  --danger: var(--danger-600);
+  --danger-subtle: var(--danger-50);
 
   /* ============================================================
      INFO & HIGHLIGHT PALETTE - SKY CYAN
@@ -71,18 +91,28 @@
      NEUTRALS & SLATE SURFACE SYSTEM
      ============================================================ */
   --neutral-950: #090D16;
-  --neutral-900: #0F172A; /* Deep Charcoal / Main Headings */
+  --neutral-900: #0F172A; /* Deep Slate Headings */
+  --neutral-850: #141E33;
   --neutral-800: #1E293B; /* Card Titles & Subheadings */
   --neutral-700: #334155; /* Primary Body Text */
-  --neutral-600: #475569; /* Secondary Body / Descriptions */
+  --neutral-600: #475569; /* Secondary Text / Descriptions */
   --neutral-500: #64748B; /* Muted Meta / Placeholders */
-  --neutral-400: #94A3B8; /* Disabled / Decorative Lines */
+  --neutral-400: #94A3B8; /* Disabled / Borders */
   --neutral-300: #CBD5E1; /* Primary Borders & Dividers */
   --neutral-200: #E2E8F0; /* Subtle Card Borders */
   --neutral-150: #EDF2F7;
   --neutral-100: #F1F5F9; /* Surface Backgrounds */
-  --neutral-50:  #F8FAFC; /* Page Canvas Background */
+  --neutral-50:  #F8FAFC; /* Canvas Background */
   --white: #FFFFFF;
+
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-600);
+  --text-muted: var(--neutral-500);
+  --border: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --background: var(--neutral-50);
+  --surface: var(--white);
+  --surface-subtle: var(--neutral-100);
 
   /* ============================================================
      TYPOGRAPHY SCALE & WEIGHTS
@@ -135,8 +165,8 @@
   --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
   --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.10), 0 4px 10px -3px rgba(15, 23, 42, 0.05);
-  --shadow-xl: 0 20px 32px -6px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.10), 0 4px 10px -3px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 36px -6px rgba(15, 23, 42, 0.14), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
   --shadow-glow-blue: 0 0 24px rgba(37, 99, 235, 0.22);
   --shadow-glow-green: 0 0 24px rgba(16, 185, 129, 0.22);
 

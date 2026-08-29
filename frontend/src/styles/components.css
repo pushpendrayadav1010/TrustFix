@@ -38,14 +38,14 @@
   background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-700) 100%);
   color: var(--white);
   border-color: var(--primary-800);
-  box-shadow: 0 2px 4px rgba(30, 58, 138, 0.18);
+  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.22);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
   border-color: var(--primary-900);
   color: var(--white);
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.28);
+  box-shadow: 0 4px 14px rgba(30, 58, 138, 0.32);
 }
 
 /* Secondary Button - Clean Slate / White */
@@ -68,14 +68,14 @@
   background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
   color: var(--white);
   border-color: var(--success-600);
-  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.22);
 }
 
 .btn-success:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--success-700) 0%, var(--success-800) 100%);
   border-color: var(--success-700);
   color: var(--white);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.32);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.32);
 }
 
 /* Danger Button */
@@ -91,13 +91,13 @@
 
 /* Light / Ghost Blue Button */
 .btn-light {
-  background-color: var(--primary-50);
+  background-color: var(--primary-100);
   color: var(--primary-800);
-  border-color: var(--primary-100);
+  border-color: var(--primary-200);
 }
 
 .btn-light:hover:not(:disabled) {
-  background-color: var(--primary-100);
+  background-color: var(--primary-200);
   color: var(--primary-900);
 }
 
@@ -105,7 +105,7 @@
 .btn-outline-primary {
   background-color: transparent;
   color: var(--primary-700);
-  border-color: var(--primary-600);
+  border-color: var(--primary-700);
 }
 
 .btn-outline-primary:hover:not(:disabled) {
@@ -152,7 +152,7 @@
 }
 
 .btn-sm {
-  padding: 0.375rem 0.75rem;
+  padding: 0.4375rem 0.875rem;
   font-size: var(--font-size-xs);
   border-radius: var(--radius-sm);
 }
@@ -223,39 +223,43 @@
 .badge-verified {
   background-color: var(--success-100);
   color: var(--success-800);
-  border: 1px solid rgba(5, 150, 105, 0.2);
+  border: 1px solid rgba(5, 150, 105, 0.25);
 }
 
 .badge-pending {
   background-color: var(--warning-100);
   color: var(--warning-800);
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.25);
 }
 
 .badge-rejected {
   background-color: var(--danger-100);
-  color: var(--danger-700);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: var(--danger-800);
+  border: 1px solid rgba(220, 38, 38, 0.25);
 }
 
 .badge-confirmed {
   background-color: var(--primary-100);
   color: var(--primary-800);
+  border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 .badge-in-progress {
   background-color: var(--info-100);
   color: var(--info-800);
+  border: 1px solid rgba(2, 132, 199, 0.2);
 }
 
 .badge-completed {
   background-color: var(--success-100);
   color: var(--success-800);
+  border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
 .badge-cancelled {
   background-color: var(--neutral-200);
   color: var(--neutral-700);
+  border: 1px solid var(--neutral-300);
 }
 
 /* Status Indicator Dot */
@@ -307,7 +311,7 @@
 }
 
 .form-control:focus {
-  border-color: var(--primary-600);
+  border-color: var(--primary-700);
   box-shadow: 0 0 0 3px var(--primary-100);
   outline: none;
 }
@@ -365,7 +369,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  color: #F59E0B; /* Amber star */
+  color: #F59E0B;
 }
 
 .rating-score {
@@ -571,7 +575,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: var(--primary-50);
+  background-color: var(--primary-100);
   color: var(--primary-700);
   display: flex;
   align-items: center;
@@ -606,7 +610,7 @@
 
 .alert-danger {
   background-color: var(--danger-50);
-  color: var(--danger-700);
+  color: var(--danger-800);
   border: 1px solid var(--danger-200);
 }
 

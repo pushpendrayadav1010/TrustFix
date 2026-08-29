@@ -10,7 +10,7 @@ import { BookingCard } from '../../components/booking/BookingCard';
 import { ProviderCard } from '../../components/provider/ProviderCard';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
 import { CategoryIcon } from '../../utils/categoryIcons';
-import { Calendar, CheckCircle2, ShieldCheck, Clock, ArrowRight, ClipboardList } from 'lucide-react';
+import { Calendar, CheckCircle2, ShieldCheck, Clock, ArrowRight, ClipboardList, Plus } from 'lucide-react';
 
 export const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -18,6 +18,13 @@ export const CustomerDashboard = () => {
   const [recommendedProviders, setRecommendedProviders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -45,7 +52,7 @@ export const CustomerDashboard = () => {
   return (
     <div className="customer-dashboard">
       <DashboardHeader
-        title={`Hello, ${user?.name?.split(' ')[0] || 'User'}`}
+        title={`${getGreeting()}, ${user?.name?.split(' ')[0] || 'Customer'}`}
         subtitle="Manage your home services, track active appointments, and discover verified local pros."
       />
 
@@ -75,17 +82,17 @@ export const CustomerDashboard = () => {
                 value="24+"
                 subtitle="Available in your neighborhood"
                 icon={<ShieldCheck size={20} />}
-                color="primary"
+                color="info"
               />
             </div>
 
             {/* Active / Upcoming Appointment Spotlight */}
             {upcomingBooking && (
               <div className="card mb-8" style={{ borderLeft: '4px solid var(--primary-700)', backgroundColor: 'var(--white)' }}>
-                <div className="card-header flex items-center justify-between" style={{ backgroundColor: 'var(--primary-50)' }}>
+                <div className="card-header flex items-center justify-between" style={{ backgroundColor: 'var(--primary-100)' }}>
                   <div className="flex items-center gap-2">
                     <Clock size={16} color="var(--primary-700)" />
-                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-800)', margin: 0 }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-900)', margin: 0 }}>
                       Upcoming Service Appointment
                     </h4>
                   </div>
@@ -143,7 +150,7 @@ export const CustomerDashboard = () => {
                 {categories.map(cat => (
                   <Link
                     key={cat.id}
-                    to={`/customer/browse?category=${cat.slug}`}
+                    to={`/customer/browse?category=${cat.slug || cat.name}`}
                     className="card card-hoverable"
                     style={{ padding: '1.25rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
@@ -152,7 +159,7 @@ export const CustomerDashboard = () => {
                         width: '38px',
                         height: '38px',
                         borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)',
+                        backgroundColor: 'var(--primary-100)',
                         color: 'var(--primary-800)',
                         display: 'flex',
                         alignItems: 'center',

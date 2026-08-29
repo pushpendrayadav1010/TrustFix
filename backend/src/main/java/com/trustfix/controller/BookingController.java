@@ -34,16 +34,32 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
-            @RequestParam Long customerId,
-            @RequestParam Long serviceId,
-            @RequestParam Long addressId,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long serviceId,
+            @RequestParam(required = false) Long addressId,
             @RequestParam(required = false) Long providerId,
             @Valid @RequestBody(required = false) BookingRequest request) {
+        
+        Long finalCustomerId = customerId != null ? customerId : (request != null ? request.getCustomerId() : null);
+        Long finalServiceId = serviceId != null ? serviceId : (request != null ? request.getServiceId() : null);
+        Long finalAddressId = addressId != null ? addressId : (request != null ? request.getAddressId() : null);
+        Long finalProviderId = providerId != null ? providerId : (request != null ? request.getProviderId() : null);
+
+        if (finalCustomerId == null) {
+            throw new com.trustfix.exception.BadRequestException("Customer ID is required");
+        }
+        if (finalServiceId == null) {
+            throw new com.trustfix.exception.BadRequestException("Service ID is required");
+        }
+        if (finalAddressId == null) {
+            throw new com.trustfix.exception.BadRequestException("Address ID is required");
+        }
+
         Booking bookingToCreate = bookingMapper.toEntity(request);
         if (bookingToCreate == null) {
             bookingToCreate = new Booking();
         }
-        Booking createdBooking = bookingService.createBooking(customerId, serviceId, addressId, providerId, bookingToCreate);
+        Booking createdBooking = bookingService.createBooking(finalCustomerId, finalServiceId, finalAddressId, finalProviderId, bookingToCreate);
         return new ResponseEntity<>(bookingMapper.toResponse(createdBooking), HttpStatus.CREATED);
     }
 

@@ -1,4 +1,5 @@
 import apiClient from './api';
+import { resolveCustomerAvatar } from '../utils/imageResolver';
 
 export const reviewService = {
   getProviderReviews: async (providerId) => {
@@ -12,7 +13,7 @@ export const reviewService = {
         providerName: r.providerName,
         customerId: r.customerId,
         customerName: r.customerName || 'Verified Homeowner',
-        customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        customerAvatar: resolveCustomerAvatar({ id: r.customerId, name: r.customerName }),
         rating: r.rating || 5,
         date: r.createdAt ? r.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
         serviceName: r.serviceName || 'Home Service',

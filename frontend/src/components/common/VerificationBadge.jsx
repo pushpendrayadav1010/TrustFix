@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Clock, XCircle } from 'lucide-react';
+import { ShieldCheck, Clock, AlertCircle } from 'lucide-react';
 
 export const VerificationBadge = ({ status = 'VERIFIED', label, size = 'md' }) => {
   const iconSize = size === 'sm' ? 12 : size === 'lg' ? 16 : 14;
@@ -17,7 +17,7 @@ export const VerificationBadge = ({ status = 'VERIFIED', label, size = 'md' }) =
     return (
       <span className="badge badge-pending" title="Verification documents under review">
         <Clock size={iconSize} strokeWidth={2} aria-hidden="true" />
-        <span>{label || 'Pending Verification'}</span>
+        <span>{label || 'Verification Pending'}</span>
       </span>
     );
   }
@@ -25,7 +25,7 @@ export const VerificationBadge = ({ status = 'VERIFIED', label, size = 'md' }) =
   if (status === 'REJECTED') {
     return (
       <span className="badge badge-rejected" title="Verification requirements not met">
-        <XCircle size={iconSize} strokeWidth={2} aria-hidden="true" />
+        <AlertCircle size={iconSize} strokeWidth={2} aria-hidden="true" />
         <span>{label || 'Verification Rejected'}</span>
       </span>
     );

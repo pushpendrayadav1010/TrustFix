@@ -4,14 +4,21 @@ import { RatingStars } from '../common/RatingStars';
 import { VerificationBadge } from '../common/VerificationBadge';
 import { formatCurrency } from '../../utils/formatters';
 import { resolveProviderAvatar } from '../../utils/imageResolver';
-import { MapPin, Map, ArrowRight } from 'lucide-react';
+import { MapPin, Map, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 
 export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) => {
   const avatarUrl = provider.avatar || resolveProviderAvatar(provider);
 
   return (
-    <div className={`card card-hoverable ${isSelected ? 'border-primary' : ''}`} style={{ position: 'relative' }}>
-      <div className="card-body">
+    <div
+      className="card card-hoverable"
+      style={{
+        position: 'relative',
+        border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
+        boxShadow: isSelected ? 'var(--shadow-md)' : 'var(--shadow-xs)',
+      }}
+    >
+      <div className="card-body" style={{ padding: '1.25rem' }}>
         <div className="flex items-start gap-4">
           {/* Avatar with Status Dot */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -19,8 +26,8 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
               src={avatarUrl}
               alt={provider.name}
               style={{
-                width: '64px',
-                height: '64px',
+                width: '68px',
+                height: '68px',
                 borderRadius: 'var(--radius-lg)',
                 objectFit: 'cover',
                 border: '2px solid var(--white)',
@@ -40,7 +47,7 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
               <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>
                 {provider.name}
               </h4>
-              <VerificationBadge status={provider.verificationStatus} />
+              <VerificationBadge status={provider.verificationStatus} size="sm" />
             </div>
 
             {provider.companyName && (
@@ -77,15 +84,15 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 borderTop: '1px solid var(--neutral-200)',
-                paddingTop: '0.75rem',
+                paddingTop: '0.875rem',
                 marginTop: '0.5rem',
                 flexWrap: 'wrap',
                 gap: '8px',
               }}
             >
               <div>
-                <span className="text-xs text-muted block">Starting Price</span>
-                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                <span className="text-2xs text-muted block uppercase font-bold" style={{ letterSpacing: '0.04em' }}>Starting from</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary-800)' }}>
                   {formatCurrency(provider.startingPrice)}
                 </span>
               </div>
@@ -99,12 +106,12 @@ export const ProviderCard = ({ provider, onSelectOnMap, isSelected = false }) =>
                     title="Locate on map"
                   >
                     <Map size={13} />
-                    <span>Pin</span>
+                    <span>Map</span>
                   </button>
                 )}
 
                 <Link to={`/providers/${provider.id}`} className="btn btn-sm btn-primary">
-                  <span>Book</span>
+                  <span>View & Book</span>
                   <ArrowRight size={13} />
                 </Link>
               </div>

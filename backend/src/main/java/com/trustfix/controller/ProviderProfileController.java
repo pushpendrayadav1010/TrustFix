@@ -42,6 +42,19 @@ public class ProviderProfileController {
         return new ResponseEntity<>(providerProfileMapper.toResponse(createdProfile), HttpStatus.CREATED);
     }
 
+    @PostMapping
+    public ResponseEntity<ProviderProfileResponse> createProviderProfileWithQueryParam(
+            @RequestParam(required = false) Long userId,
+            @Valid @RequestBody ProviderProfileRequest request) {
+        Long targetUserId = userId != null ? userId : (request != null ? request.getUserId() : null);
+        if (targetUserId == null) {
+            throw new com.trustfix.exception.BadRequestException("User ID is required to create a provider profile");
+        }
+        ProviderProfile profile = providerProfileMapper.toEntity(request);
+        ProviderProfile createdProfile = providerProfileService.createProviderProfile(targetUserId, profile);
+        return new ResponseEntity<>(providerProfileMapper.toResponse(createdProfile), HttpStatus.CREATED);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProviderProfileResponse> getProviderById(@PathVariable Long id) {
         ProviderProfile profile = providerProfileService.getProviderById(id);

@@ -23,13 +23,19 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: Global error handler
+// Response interceptor: Global error handler & session expiry handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Future: Trigger token refresh or session expiry
-      console.warn('[TrustFix API] Unauthorized request - 401');
+      console.warn('[TrustFix API] Session expired or unauthorized (401)');
+      // If we got 401 on an authenticated endpoint (not during login/register attempts), clear session
+      const isAuthEndpoint = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('trustfix_token');
+        localStorage.removeItem('trustfix_user');
+        localStorage.removeItem('trustfix_provider_profile');
+      }
     }
     return Promise.reject(error);
   }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 
 public class ProviderProfileRequest {
 
+    private Long userId;
+
     @Size(max = 150, message = "Business name cannot exceed 150 characters")
     private String businessName;
 
@@ -135,6 +137,14 @@ public class ProviderProfileRequest {
 
     public void setPostalCode(String postalCode) {
         this.postalCode = postalCode;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public boolean isAvailable() {

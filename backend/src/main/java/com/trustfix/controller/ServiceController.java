@@ -40,6 +40,19 @@ public class ServiceController {
         return new ResponseEntity<>(serviceMapper.toResponse(createdService), HttpStatus.CREATED);
     }
 
+    @PostMapping
+    public ResponseEntity<ServiceResponse> createServiceWithBodyOrParam(
+            @RequestParam(required = false) Long categoryId,
+            @Valid @RequestBody ServiceRequest request) {
+        Long targetCatId = categoryId != null ? categoryId : (request != null ? request.getCategoryId() : null);
+        if (targetCatId == null) {
+            throw new com.trustfix.exception.BadRequestException("Category ID is required to create a service");
+        }
+        Service service = serviceMapper.toEntity(request);
+        Service createdService = serviceCatalogService.createService(targetCatId, service);
+        return new ResponseEntity<>(serviceMapper.toResponse(createdService), HttpStatus.CREATED);
+    }
+
     @GetMapping
     public ResponseEntity<List<ServiceResponse>> getAllServices() {
         List<ServiceResponse> services = serviceCatalogService.getAllServices()
