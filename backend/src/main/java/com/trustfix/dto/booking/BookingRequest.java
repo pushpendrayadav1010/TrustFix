@@ -8,6 +8,11 @@ import java.time.LocalTime;
 
 public class BookingRequest {
 
+    private Long customerId;
+    private Long serviceId;
+    private Long addressId;
+    private Long providerId;
+
     @NotNull(message = "Booking date is required")
     private LocalDate bookingDate;
 
@@ -21,6 +26,38 @@ public class BookingRequest {
     private String cancellationReason;
 
     public BookingRequest() {
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+
+    public Long getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(Long serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public Long getAddressId() {
+        return addressId;
+    }
+
+    public void setAddressId(Long addressId) {
+        this.addressId = addressId;
+    }
+
+    public Long getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(Long providerId) {
+        this.providerId = providerId;
     }
 
     public BookingRequest(LocalDate bookingDate, LocalTime bookingTime, BigDecimal totalAmount, String notes) {

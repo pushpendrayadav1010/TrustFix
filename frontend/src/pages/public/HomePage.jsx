@@ -12,15 +12,13 @@ import {
   Check,
   ArrowRight,
   Star,
-  Clock,
   Award,
-  Zap,
-  Wrench,
-  Sparkles,
-  Snowflake,
   CreditCard,
-  Users,
   CheckCircle2,
+  Lock,
+  Headphones,
+  Sparkles,
+  Users,
 } from 'lucide-react';
 
 export const HomePage = () => {
@@ -65,9 +63,9 @@ export const HomePage = () => {
           ============================================================ */}
       <section
         style={{
-          background: 'linear-gradient(135deg, var(--primary-950) 0%, var(--primary-900) 60%, var(--primary-850) 100%)',
+          background: 'linear-gradient(135deg, var(--primary-950) 0%, var(--primary-900) 50%, var(--primary-850) 100%)',
           color: 'var(--white)',
-          padding: '4rem 0 4.5rem 0',
+          padding: '4.5rem 0 5rem 0',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -77,9 +75,9 @@ export const HomePage = () => {
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)',
             backgroundSize: '28px 28px',
-            opacity: 0.85,
+            opacity: 0.7,
             pointerEvents: 'none',
           }}
         />
@@ -90,7 +88,7 @@ export const HomePage = () => {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               alignItems: 'center',
-              gap: '3rem',
+              gap: '3.5rem',
             }}
           >
             {/* Left Content Column */}
@@ -102,12 +100,12 @@ export const HomePage = () => {
                   alignItems: 'center',
                   gap: '8px',
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: 'var(--radius-full)',
                   padding: '6px 16px',
                   fontSize: '0.8125rem',
                   fontWeight: 600,
-                  color: 'var(--primary-100)',
+                  color: 'var(--primary-200)',
                   marginBottom: '1.25rem',
                   backdropFilter: 'blur(6px)',
                 }}
@@ -119,30 +117,30 @@ export const HomePage = () => {
               {/* Main Headline */}
               <h1
                 style={{
-                  fontSize: 'clamp(2.25rem, 4.5vw, 3.25rem)',
+                  fontSize: 'clamp(2.25rem, 4.5vw, 3.35rem)',
                   fontWeight: 800,
                   color: 'var(--white)',
                   lineHeight: 1.15,
-                  letterSpacing: '-0.03em',
+                  letterSpacing: '-0.035em',
                   marginBottom: '1.25rem',
                 }}
               >
                 Trusted professionals.
                 <br />
-                Right at your doorstep.
+                <span style={{ color: 'var(--primary-300)' }}>Right at your doorstep.</span>
               </h1>
 
               {/* Supporting Subtitle */}
               <p
                 style={{
                   fontSize: 'clamp(1rem, 1.8vw, 1.15rem)',
-                  color: 'var(--primary-100)',
+                  color: 'var(--primary-200)',
                   lineHeight: 1.6,
                   marginBottom: '2rem',
                   maxWidth: '540px',
                 }}
               >
-                Book verified electricians, plumbers, cleaners, appliance technicians and more with transparent pricing and trusted service.
+                Book verified electricians, plumbers, cleaners, appliance technicians and more with transparent pricing, background checks, and zero advance deposit.
               </p>
 
               {/* Search Bar Input */}
@@ -184,11 +182,12 @@ export const HomePage = () => {
 
               {/* Dual CTA & Quick Category Links */}
               <div className="flex items-center gap-3 flex-wrap">
-                <Link to="/services" className="btn btn-outline-secondary" style={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff' }}>
+                <Link to="/services" className="btn btn-outline-secondary" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
                   Explore Services
                 </Link>
                 <Link to="/browse" className="btn btn-light">
-                  Find Providers Near You →
+                  <span>Find Providers Near You</span>
+                  <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -199,7 +198,7 @@ export const HomePage = () => {
                 style={{
                   width: '100%',
                   maxWidth: '440px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
                   borderRadius: 'var(--radius-2xl)',
                   padding: '1.75rem',
@@ -211,23 +210,24 @@ export const HomePage = () => {
                   <div className="flex items-center gap-2">
                     <div
                       style={{
-                        width: '38px',
-                        height: '38px',
+                        width: '40px',
+                        height: '40px',
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--success-600)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#fff',
+                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)',
                       }}
                     >
-                      <ShieldCheck size={22} strokeWidth={2.2} />
+                      <ShieldCheck size={24} strokeWidth={2.2} />
                     </div>
                     <div>
-                      <h4 style={{ color: '#fff', fontSize: '1rem', margin: 0, fontWeight: 700 }}>
-                        TrustFix Shield
+                      <h4 style={{ color: '#fff', fontSize: '1.05rem', margin: 0, fontWeight: 700 }}>
+                        TrustFix Shield™
                       </h4>
-                      <span style={{ fontSize: '11px', color: 'var(--success-400)', fontWeight: 600 }}>
+                      <span style={{ fontSize: '11px', color: 'var(--success-300)', fontWeight: 600 }}>
                         100% Certified Network
                       </span>
                     </div>
@@ -245,7 +245,7 @@ export const HomePage = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.07)',
                       padding: '10px 14px',
                       borderRadius: 'var(--radius-md)',
                     }}
@@ -261,7 +261,7 @@ export const HomePage = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.07)',
                       padding: '10px 14px',
                       borderRadius: 'var(--radius-md)',
                     }}
@@ -277,7 +277,7 @@ export const HomePage = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.07)',
                       padding: '10px 14px',
                       borderRadius: 'var(--radius-md)',
                     }}
@@ -292,7 +292,7 @@ export const HomePage = () => {
                 {/* Provider Mini Live Preview */}
                 <div
                   style={{
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.12)',
                     paddingTop: '1rem',
                     display: 'flex',
                     alignItems: 'center',
@@ -322,11 +322,11 @@ export const HomePage = () => {
                         <Star size={12} fill="#F59E0B" color="#F59E0B" />
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>4.9/5.0</span>
                       </div>
-                      <span style={{ fontSize: '10px', color: 'var(--primary-200)' }}>1,500+ Mumbai bookings</span>
+                      <span style={{ fontSize: '10px', color: 'var(--primary-200)' }}>1,500+ Verified bookings</span>
                     </div>
                   </div>
 
-                  <Link to="/browse" className="btn btn-sm btn-success" style={{ padding: '4px 10px', fontSize: '11px' }}>
+                  <Link to="/browse" className="btn btn-sm btn-success" style={{ padding: '5px 12px', fontSize: '11px' }}>
                     View All
                   </Link>
                 </div>
@@ -369,13 +369,13 @@ export const HomePage = () => {
                       width: '48px',
                       height: '48px',
                       borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--primary-50)',
+                      backgroundColor: 'var(--primary-100)',
                       color: 'var(--primary-800)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginBottom: '1rem',
-                      border: '1px solid var(--primary-100)',
+                      border: '1px solid var(--primary-200)',
                     }}
                   >
                     <CategoryIcon categoryName={cat.name} slug={cat.slug} size={24} strokeWidth={2} />
@@ -487,7 +487,7 @@ export const HomePage = () => {
                 1
               </div>
               <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Choose a Service</h4>
-              <p className="text-sm text-muted">Browse dozens of home repair categories with transparent starting prices and checklists.</p>
+              <p className="text-sm text-muted">Browse home repair categories with transparent starting prices and checklists.</p>
             </div>
 
             <div className="card" style={{ padding: '1.75rem', textAlign: 'center' }}>
@@ -585,6 +585,7 @@ export const HomePage = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: '1px solid var(--success-100)',
                 }}
               >
                 <ShieldCheck size={26} strokeWidth={2} />
@@ -605,12 +606,13 @@ export const HomePage = () => {
                   width: '48px',
                   height: '48px',
                   borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--primary-50)',
+                  backgroundColor: 'var(--primary-100)',
                   color: 'var(--primary-700)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: '1px solid var(--primary-200)',
                 }}
               >
                 <CreditCard size={26} strokeWidth={2} />
@@ -637,6 +639,7 @@ export const HomePage = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: '1px solid var(--warning-100)',
                 }}
               >
                 <Star size={26} strokeWidth={2} />
@@ -663,6 +666,7 @@ export const HomePage = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: '1px solid var(--success-100)',
                 }}
               >
                 <Award size={26} strokeWidth={2} />
@@ -686,18 +690,19 @@ export const HomePage = () => {
           ============================================================ */}
       <section
         style={{
-          background: 'linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%)',
+          background: 'linear-gradient(135deg, var(--primary-950) 0%, var(--primary-900) 50%, var(--primary-800) 100%)',
           color: 'var(--white)',
           padding: '4.5rem 0',
           textAlign: 'center',
+          position: 'relative',
         }}
       >
         <div className="container" style={{ maxWidth: '720px' }}>
           <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--white)', marginBottom: '1rem' }}>
             Ready to Fix Your Home with Verified Pros?
           </h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--primary-100)', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Join thousands of satisfied homeowners across Mumbai and Thane who rely on TrustFix for prompt, reliable home services.
+          <p style={{ fontSize: '1.1rem', color: 'var(--primary-200)', marginBottom: '2rem', lineHeight: 1.6 }}>
+            Join thousands of satisfied homeowners who rely on TrustFix for prompt, reliable home services.
           </p>
           <div className="flex items-center justify-center flex-wrap gap-4">
             <Link to="/browse" className="btn btn-lg btn-secondary" style={{ backgroundColor: 'var(--white)', color: 'var(--primary-900)', border: 'none' }}>

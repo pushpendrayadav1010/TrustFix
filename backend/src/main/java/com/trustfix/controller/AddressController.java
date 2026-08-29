@@ -44,10 +44,14 @@ public class AddressController {
 
     @PostMapping
     public ResponseEntity<AddressResponse> addAddressWithQueryParam(
-            @RequestParam Long userId,
+            @RequestParam(required = false) Long userId,
             @Valid @RequestBody AddressRequest request) {
+        Long targetUserId = userId != null ? userId : (request != null ? request.getUserId() : null);
+        if (targetUserId == null) {
+            throw new com.trustfix.exception.BadRequestException("User ID is required to add an address");
+        }
         Address address = addressMapper.toEntity(request);
-        Address createdAddress = addressService.addAddress(userId, address);
+        Address createdAddress = addressService.addAddress(targetUserId, address);
         return new ResponseEntity<>(addressMapper.toResponse(createdAddress), HttpStatus.CREATED);
     }
 

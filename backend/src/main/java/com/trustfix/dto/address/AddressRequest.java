@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 
 public class AddressRequest {
 
+    private Long userId;
+
     @NotBlank(message = "Address line 1 is required")
     @Size(max = 255, message = "Address line 1 cannot exceed 255 characters")
     private String addressLine1;
@@ -132,6 +134,14 @@ public class AddressRequest {
 
     public void setLongitude(Double longitude) {
         this.longitude = longitude;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public boolean isDefaultAddress() {

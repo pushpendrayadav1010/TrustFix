@@ -6,7 +6,7 @@ export const RatingStars = ({ rating = 5, reviewCount, showScore = true, size = 
   const starSize = size === 'lg' ? 18 : size === 'md' ? 15 : 13;
 
   return (
-    <div className="rating-stars" aria-label={`Rated ${numRating} out of 5 stars`}>
+    <div className="rating-stars" aria-label={`Rated ${numRating.toFixed(1)} out of 5 stars`}>
       <div className="flex items-center gap-05">
         {[1, 2, 3, 4, 5].map((starIndex) => {
           const fillPercentage = Math.max(0, Math.min(1, numRating - (starIndex - 1)));

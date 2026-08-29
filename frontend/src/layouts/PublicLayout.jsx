@@ -2,7 +2,6 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { PublicNavbar } from '../components/navbar/PublicNavbar';
 import { PublicFooter } from '../components/footer/PublicFooter';
-import { DemoSwitcher } from '../components/common/DemoSwitcher';
 
 export const PublicLayout = () => {
   return (
@@ -12,7 +11,6 @@ export const PublicLayout = () => {
         <Outlet />
       </main>
       <PublicFooter />
-      <DemoSwitcher />
     </div>
   );
 };

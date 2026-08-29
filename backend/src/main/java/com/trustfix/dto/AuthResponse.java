@@ -3,6 +3,7 @@ package com.trustfix.dto;
 public class AuthResponse {
 
     private String message;
+    private String token;
     private Long userId;
     private String name;
     private String email;
@@ -13,18 +14,29 @@ public class AuthResponse {
 
     public AuthResponse(String message, Long userId, String name, String email, String role) {
         this.message = message;
+        this.token = message;
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.role = role;
     }
 
+    public String getToken() {
+        return token != null ? token : message;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+        this.message = token;
+    }
+
     public String getMessage() {
-        return message;
+        return message != null ? message : token;
     }
 
     public void setMessage(String message) {
         this.message = message;
+        this.token = message;
     }
 
     public Long getUserId() {

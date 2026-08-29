@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -37,6 +38,19 @@ public class ServiceController {
             @Valid @RequestBody ServiceRequest request) {
         Service service = serviceMapper.toEntity(request);
         Service createdService = serviceCatalogService.createService(categoryId, service);
+        return new ResponseEntity<>(serviceMapper.toResponse(createdService), HttpStatus.CREATED);
+    }
+
+    @PostMapping
+    public ResponseEntity<ServiceResponse> createServiceWithBodyOrParam(
+            @RequestParam(required = false) Long categoryId,
+            @Valid @RequestBody ServiceRequest request) {
+        Long targetCatId = categoryId != null ? categoryId : (request != null ? request.getCategoryId() : null);
+        if (targetCatId == null) {
+            throw new com.trustfix.exception.BadRequestException("Category ID is required to create a service");
+        }
+        Service service = serviceMapper.toEntity(request);
+        Service createdService = serviceCatalogService.createService(targetCatId, service);
         return new ResponseEntity<>(serviceMapper.toResponse(createdService), HttpStatus.CREATED);
     }
 

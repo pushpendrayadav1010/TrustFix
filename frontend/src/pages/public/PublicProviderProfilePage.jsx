@@ -118,7 +118,7 @@ export const PublicProviderProfilePage = () => {
                 </div>
 
                 <Link
-                  to={`/customer/book?providerId=${provider.id}`}
+                  to={`/customer/book?providerId=${provider.id}&category=${encodeURIComponent(provider.service || '')}`}
                   className="btn btn-lg btn-primary"
                 >
                   <span>Book This Provider</span>

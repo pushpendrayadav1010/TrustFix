@@ -13,6 +13,7 @@ public class ServiceRequest {
     private String name;
 
     private String description;
+    private Long categoryId;
 
     @NotNull(message = "Base price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Base price must be greater than 0")
@@ -74,6 +75,14 @@ public class ServiceRequest {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
     public boolean isActive() {

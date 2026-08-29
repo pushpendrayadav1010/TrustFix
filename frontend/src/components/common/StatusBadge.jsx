@@ -1,10 +1,10 @@
 import React from 'react';
 import { formatStatus } from '../../utils/formatters';
-import { CheckCircle2, Clock, PlayCircle, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, PlayCircle, XCircle, AlertCircle } from 'lucide-react';
 
 export const StatusBadge = ({ status }) => {
   let badgeClass = 'badge-pending';
-  let Icon = Clock;
+  let Icon = Clock3;
 
   switch (status) {
     case 'CONFIRMED':
@@ -23,10 +23,14 @@ export const StatusBadge = ({ status }) => {
       badgeClass = 'badge-cancelled';
       Icon = XCircle;
       break;
+    case 'REJECTED':
+      badgeClass = 'badge-rejected';
+      Icon = AlertCircle;
+      break;
     case 'PENDING':
     default:
       badgeClass = 'badge-pending';
-      Icon = Clock;
+      Icon = Clock3;
       break;
   }
 

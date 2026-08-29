@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/dashboard/Sidebar';
-import { DemoSwitcher } from '../components/common/DemoSwitcher';
+ import { Sidebar } from '../components/dashboard/Sidebar';
 
 export const ProviderLayout = () => {
   return (
@@ -10,7 +9,6 @@ export const ProviderLayout = () => {
       <div className="dashboard-main">
         <Outlet />
       </div>
-      <DemoSwitcher />
     </div>
   );
 };

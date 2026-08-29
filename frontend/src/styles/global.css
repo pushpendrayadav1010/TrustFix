@@ -19,8 +19,8 @@ html {
 
 body {
   font-family: var(--font-family);
-  background-color: var(--neutral-50);
-  color: var(--neutral-700);
+  background-color: var(--background);
+  color: var(--text-secondary);
   line-height: 1.6;
   min-height: 100vh;
   display: flex;
@@ -37,16 +37,16 @@ body {
    TYPOGRAPHY HIERARCHY & WEIGHTS
    ============================================================ */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--neutral-900);
+  color: var(--text-primary);
   font-weight: var(--font-weight-bold);
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: clamp(2.15rem, 4.5vw, 3rem);
+  font-size: clamp(2.15rem, 4.5vw, 3.25rem);
   font-weight: var(--font-weight-extrabold);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   line-height: 1.15;
 }
 
@@ -80,7 +80,7 @@ h6 {
 }
 
 p {
-  color: var(--neutral-600);
+  color: var(--text-secondary);
   line-height: 1.6;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-regular);
@@ -174,7 +174,7 @@ button, input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
-  background-color: var(--primary-50);
+  background-color: var(--primary-subtle);
   color: var(--primary-800);
   border: 1px solid var(--primary-200);
   padding: 6px 14px;
@@ -206,7 +206,7 @@ button, input, select, textarea {
 
 .section-desc {
   font-size: var(--font-size-base);
-  color: var(--neutral-600);
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -308,8 +308,8 @@ button, input, select, textarea {
 .font-bold { font-weight: var(--font-weight-bold); }
 .font-extrabold { font-weight: var(--font-weight-extrabold); }
 
-.text-muted { color: var(--neutral-500); }
-.text-secondary { color: var(--neutral-600); }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
 .text-primary { color: var(--primary-700); }
 .text-success { color: var(--success-600); }
 .text-danger { color: var(--danger-600); }
@@ -354,9 +354,47 @@ button, input, select, textarea {
 }
 
 /* ============================================================
+   RESPONSIVE DATA TABLES
+   ============================================================ */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  color: var(--neutral-800);
+}
+
+.table th {
+  padding: 0.875rem 1rem;
+  background-color: var(--neutral-100);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--neutral-600);
+  text-align: left;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--neutral-200);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background-color: var(--neutral-50);
+}
+
+/* ============================================================
    ACCESSIBILITY & FOCUS
    ============================================================ */
 :focus-visible {
-  outline: 2px solid var(--primary-600);
+  outline: 2px solid var(--primary-700);
   outline-offset: 2px;
 }

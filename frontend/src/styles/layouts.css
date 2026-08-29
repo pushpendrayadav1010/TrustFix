@@ -3,7 +3,9 @@
    ============================================================ */
 .navbar {
   height: var(--header-height);
-  background-color: var(--white);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--neutral-200);
   position: sticky;
   top: 0;
@@ -26,7 +28,7 @@
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-extrabold);
   color: var(--primary-900);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   text-decoration: none;
 }
 
@@ -37,13 +39,13 @@
 .brand-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-700) 100%);
+  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 50%, var(--primary-700) 100%);
   color: var(--white);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.28);
 }
 
 .brand-badge {
@@ -210,7 +212,7 @@
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
-  background-color: var(--neutral-50);
+  background-color: var(--background);
 }
 
 .dashboard-sidebar {
@@ -263,8 +265,8 @@
 }
 
 .sidebar-link.active {
-  background-color: var(--primary-50);
-  color: var(--primary-800);
+  background-color: var(--primary-100);
+  color: var(--primary-900);
   font-weight: var(--font-weight-bold);
   border-left: 3px solid var(--primary-700);
 }
@@ -310,7 +312,9 @@
 
 .dashboard-header {
   height: var(--header-height);
-  background-color: var(--white);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--neutral-200);
   padding: 0 var(--spacing-6);
   display: flex;

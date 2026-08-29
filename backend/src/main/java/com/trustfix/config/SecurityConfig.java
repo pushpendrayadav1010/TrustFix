@@ -35,7 +35,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*", "https://*.vercel.app", "https://*"));
+        
+        String envOrigins = System.getenv("APP_ALLOWED_ORIGINS");
+        java.util.List<String> origins = new java.util.ArrayList<>(List.of(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "https://*.vercel.app"
+        ));
+        
+        if (envOrigins != null && !envOrigins.isBlank()) {
+            for (String origin : envOrigins.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty() && !origins.contains(trimmed)) {
+                    origins.add(trimmed);
+                }
+            }
+        }
+
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setAllowCredentials(true);
@@ -63,7 +80,9 @@ public class SecurityConfig {
                     "/error"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
+                    "/api/categories",
                     "/api/categories/**",
+                    "/api/services",
                     "/api/services/**",
                     "/api/providers/verified",
                     "/api/providers/available",
@@ -73,12 +92,12 @@ public class SecurityConfig {
                     "/api/reviews/provider/**"
                 ).permitAll()
                 .requestMatchers("/api/users/role/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users", "/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/providers/*/verify").hasRole("ADMIN")
                 .requestMatchers("/api/bookings/status/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/services/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/categories/**", "/api/services/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/services/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/categories", "/api/categories/**", "/api/services", "/api/services/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/categories", "/api/categories/**", "/api/services", "/api/services/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/categories", "/api/categories/**", "/api/services", "/api/services/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
 

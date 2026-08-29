@@ -152,29 +152,6 @@ export const AuthProvider = ({ children }) => {
     setProviderProfile(prev => (prev ? { ...prev, ...updatedFields } : updatedFields));
   };
 
-  // Switch demo persona (Instant convenience for review & grading)
-  const switchDemoPersona = async (roleType) => {
-    if (roleType === 'CUSTOMER') {
-      try {
-        await login({ email: 'testcustomer@gmail.com', password: 'Test@123' });
-      } catch (err) {
-        console.error('Demo customer login failed:', err);
-      }
-    } else if (roleType === 'PROVIDER_VERIFIED' || roleType === 'PROVIDER_PENDING') {
-      try {
-        await login({ email: 'testprovider@gmail.com', password: 'Test@123' });
-      } catch (err) {
-        console.error('Demo provider login failed:', err);
-      }
-    } else if (roleType === 'ADMIN') {
-      try {
-        await login({ email: 'admin@trustfix.com', password: 'Admin@123' });
-      } catch (err) {
-        console.error('Demo admin login failed:', err);
-      }
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -189,8 +166,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUser,
         updateProvider,
-        refreshProviderProfile,
-        switchDemoPersona
+        refreshProviderProfile
       }}
     >
       {children}
