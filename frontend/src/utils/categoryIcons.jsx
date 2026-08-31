@@ -135,6 +135,8 @@ export const getCategoryIconComponent = (categoryName = '', slug = '') => {
   return Wrench;
 };
 
+export const getCategoryIcon = getCategoryIconComponent;
+
 /**
  * Renderable Category Icon Component with clean SVG styling
  */

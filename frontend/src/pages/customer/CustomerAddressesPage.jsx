@@ -1,34 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { LoadingSpinner } from '../../components/common/FeedbackStates';
-import { MapPin, Plus, Edit2, Trash2 } from 'lucide-react';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { MapPin, Plus, Trash2, Edit2, CheckCircle2, Home, Building, AlertCircle } from 'lucide-react';
 
 export const CustomerAddressesPage = () => {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
   // Add / Edit Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [formData, setFormData] = useState({
-    label: 'Home',
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [form, setForm] = useState({
     flat: '',
     street: '',
-    area: '',
     city: 'Mumbai',
     state: 'Maharashtra',
-    pincode: '',
-    landmark: '',
+    pincode: '400053',
+    label: 'Home',
     isDefault: false,
-    latitude: 19.1136,
-    longitude: 72.8697,
   });
+  const [saving, setSaving] = useState(false);
 
   const fetchAddresses = async () => {
     if (!user?.id) return;
@@ -38,7 +35,6 @@ export const CustomerAddressesPage = () => {
       setAddresses(data);
     } catch (err) {
       console.error('Failed to load addresses:', err);
-      setAddresses([]);
     } finally {
       setLoading(false);
     }
@@ -46,102 +42,123 @@ export const CustomerAddressesPage = () => {
 
   useEffect(() => {
     fetchAddresses();
-  }, [user]);
+  }, [user?.id]);
 
-  const handleOpenAdd = () => {
-    setEditingAddress(null);
-    setFormData({
-      label: 'Home',
+  const handleOpenAddModal = () => {
+    setEditingAddressId(null);
+    setForm({
       flat: '',
       street: '',
-      area: '',
       city: 'Mumbai',
       state: 'Maharashtra',
-      pincode: '',
-      landmark: '',
+      pincode: '400053',
+      label: 'Home',
       isDefault: addresses.length === 0,
-      latitude: 19.1136,
-      longitude: 72.8697,
     });
     setModalOpen(true);
   };
 
-  const handleOpenEdit = (addr) => {
-    setEditingAddress(addr);
-    setFormData({ ...addr });
+  const handleOpenEditModal = (addr) => {
+    setEditingAddressId(addr.id);
+    setForm({
+      flat: addr.flat || addr.addressLine1 || '',
+      street: addr.street || '',
+      city: addr.city || 'Mumbai',
+      state: addr.state || 'Maharashtra',
+      pincode: addr.pincode || addr.postalCode || '400053',
+      label: addr.label || 'Home',
+      isDefault: addr.isDefault || false,
+    });
     setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this address?')) {
-      try {
-        await userService.deleteAddress(id);
-        fetchAddresses();
-      } catch (err) {
-        alert('Delete address failed: ' + (err.response?.data?.message || err.message));
+  const handleSaveAddress = async (e) => {
+    e.preventDefault();
+    if (!form.flat.trim()) return;
+    setSaving(true);
+    try {
+      if (editingAddressId) {
+        await userService.updateAddress(editingAddressId, form);
+      } else {
+        await userService.addAddress(user.id, form);
       }
+      setModalOpen(false);
+      await fetchAddresses();
+    } catch (err) {
+      alert(err.message || 'Failed to save address');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this address?')) return;
+    try {
+      await userService.deleteAddress(id);
+      await fetchAddresses();
+    } catch (err) {
+      alert(err.message || 'Failed to delete address');
     }
   };
 
   const handleSetDefault = async (id) => {
     try {
       await userService.setDefaultAddress(id);
-      fetchAddresses();
+      await fetchAddresses();
     } catch (err) {
-      alert('Failed to set default address: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      const userId = user?.id;
-      if (!userId) {
-        throw new Error('User session not authenticated');
-      }
-      if (editingAddress) {
-        await userService.updateAddress(editingAddress.id, formData);
-      } else {
-        await userService.addAddress(userId, { ...formData });
-      }
-      setModalOpen(false);
-      fetchAddresses();
-    } catch (err) {
-      alert('Failed to save address: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setSubmitting(false);
+      alert(err.message || 'Failed to set default address');
     }
   };
 
   return (
-    <div className="customer-addresses-page" style={{ padding: '2rem 0 4rem 0' }}>
-      <div className="container">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-          <div>
-            <span className="section-subtitle">Account Preferences</span>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
-              Saved Service Addresses
-            </h1>
-            <p className="text-xs text-muted">Manage service delivery locations and default home coordinates for verified technician dispatch.</p>
-          </div>
-
-          <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
-            <Plus size={16} />
+    <div>
+      <DashboardHeader
+        title="Saved Addresses"
+        subtitle="Manage your home, office, and doorstep service delivery locations."
+        actions={
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={handleOpenAddModal}
+          >
+            <Plus size={14} />
             <span>Add New Address</span>
-          </Button>
-        </div>
+          </button>
+        }
+      />
 
-        {/* Address Cards Grid */}
+      <div className="dashboard-content">
+        
         {loading ? (
-          <LoadingSpinner message="Loading your addresses..." />
+          <LoadingSpinner message="Loading saved addresses..." />
+        ) : addresses.length === 0 ? (
+          <EmptyState
+            icon={MapPin}
+            title="No saved addresses found"
+            description="Add your delivery address so verified technicians can reach your doorstep promptly."
+            action={
+              <Button variant="primary" onClick={handleOpenAddModal}>
+                <Plus size={14} />
+                <span>Add First Address</span>
+              </Button>
+            }
+          />
         ) : (
-          <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
             {addresses.map((addr) => (
-              <div key={addr.id} className="card flex flex-col justify-between" style={{ border: addr.isDefault ? '2px solid var(--primary-800)' : '1px solid var(--neutral-200)' }}>
-                <div className="card-body">
+              <div
+                key={addr.id}
+                className="card card-hoverable"
+                style={{
+                  padding: '1.5rem',
+                  backgroundColor: 'var(--white)',
+                  border: addr.isDefault ? '2px solid var(--primary-600)' : '1px solid var(--neutral-200)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div
@@ -149,8 +166,8 @@ export const CustomerAddressesPage = () => {
                           width: '32px',
                           height: '32px',
                           borderRadius: 'var(--radius-sm)',
-                          backgroundColor: 'var(--primary-50)',
-                          color: 'var(--primary-700)',
+                          backgroundColor: 'var(--primary-100)',
+                          color: 'var(--primary-800)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -158,151 +175,146 @@ export const CustomerAddressesPage = () => {
                       >
                         <MapPin size={16} />
                       </div>
-                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-                        {addr.label}
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
+                        {addr.label || 'Home'}
                       </h4>
                     </div>
 
-                    {addr.isDefault ? (
-                      <span className="badge badge-verified">Default Address</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleSetDefault(addr.id)}
-                        className="btn btn-sm btn-light text-xs"
-                      >
-                        Set Default
-                      </button>
+                    {addr.isDefault && (
+                      <span className="badge badge-verified" style={{ fontSize: '10px' }}>
+                        Default Address
+                      </span>
                     )}
                   </div>
 
-                  <p className="text-sm font-semibold" style={{ color: 'var(--neutral-800)', marginTop: '0.5rem' }}>
+                  <p className="text-xs text-muted mb-1 font-semibold" style={{ color: 'var(--neutral-800)' }}>
                     {addr.flat}
                   </p>
-                  <p className="text-xs text-muted">
-                    {addr.street}, {addr.city}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
-                  </p>
-
-                  {addr.landmark && (
-                    <p className="text-xs" style={{ color: 'var(--primary-700)', marginTop: '4px' }}>
-                      Landmark: {addr.landmark}
+                  {addr.street && (
+                    <p className="text-xs text-muted mb-1">
+                      {addr.street}
                     </p>
                   )}
+                  <p className="text-xs text-muted mb-4">
+                    {addr.city}, {addr.state || 'Maharashtra'} - {addr.pincode}
+                  </p>
                 </div>
 
-                <div className="card-footer flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(addr)}
-                    className="btn btn-sm btn-secondary flex items-center gap-1"
-                  >
-                    <Edit2 size={12} />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(addr.id)}
-                    className="btn btn-sm btn-secondary flex items-center gap-1"
-                    style={{ color: 'var(--danger-600)' }}
-                  >
-                    <Trash2 size={12} />
-                    <span>Delete</span>
-                  </button>
+                <div className="flex items-center justify-between pt-3 border-top" style={{ borderTop: '1px solid var(--neutral-200)' }}>
+                  {!addr.isDefault ? (
+                    <button
+                      type="button"
+                      className="btn-link text-xs font-semibold"
+                      style={{ background: 'none', border: 'none', color: 'var(--primary-700)', cursor: 'pointer' }}
+                      onClick={() => handleSetDefault(addr.id)}
+                    >
+                      Set as Default
+                    </button>
+                  ) : (
+                    <span className="text-2xs text-muted font-bold">Primary Delivery</span>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-secondary"
+                      style={{ padding: '4px 8px' }}
+                      onClick={() => handleOpenEditModal(addr)}
+                      title="Edit Address"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      style={{ padding: '4px 8px' }}
+                      onClick={() => handleDeleteAddress(addr.id)}
+                      title="Delete Address"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Add / Edit Address Modal */}
+        {/* Add/Edit Address Modal */}
         <Modal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
-          title={editingAddress ? 'Edit Service Address' : 'Add New Service Address'}
-          size="lg"
+          title={editingAddressId ? 'Edit Saved Address' : 'Add New Saved Address'}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-              <Button variant="primary" loading={submitting} onClick={handleSubmit}>
-                {editingAddress ? 'Save Address Changes' : 'Save New Address'}
+              <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" loading={saving} onClick={handleSaveAddress}>
+                {editingAddressId ? 'Update Address' : 'Save Address'}
               </Button>
             </>
           }
         >
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="Address Label"
-                placeholder="e.g. Home, Office, Parents"
-                value={formData.label}
-                onChange={(e) => setFormData((prev) => ({ ...prev, label: e.target.value }))}
-                required
-              />
-
-              <Input
-                label="House / Flat / Building"
-                placeholder="e.g. Flat 402, Sunshine Apts"
-                value={formData.flat}
-                onChange={(e) => setFormData((prev) => ({ ...prev, flat: e.target.value }))}
-                required
-              />
+          <form onSubmit={handleSaveAddress}>
+            <div className="form-group mb-3">
+              <label className="form-label">Address Label</label>
+              <div className="flex gap-2">
+                {['Home', 'Office', 'Other'].map((lbl) => (
+                  <button
+                    key={lbl}
+                    type="button"
+                    className={`btn btn-sm ${form.label === lbl ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setForm({ ...form, label: lbl })}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Input
-              label="Street / Road"
-              placeholder="e.g. MG Road, Near Station"
-              value={formData.street}
-              onChange={(e) => setFormData((prev) => ({ ...prev, street: e.target.value }))}
+              label="Flat / Unit / Building"
+              placeholder="e.g. Flat 301, Tower B, Lotus Park"
+              value={form.flat}
+              onChange={(e) => setForm({ ...form, flat: e.target.value })}
               required
             />
 
-            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="Area / Locality"
-                placeholder="e.g. Thane West"
-                value={formData.area}
-                onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
-                required
-              />
+            <Input
+              label="Street / Landmark / Area"
+              placeholder="e.g. Near HDFC Bank, Linking Road"
+              value={form.street}
+              onChange={(e) => setForm({ ...form, street: e.target.value })}
+              required
+            />
 
-              <Input
-                label="Pincode"
-                placeholder="e.g. 400601"
-                value={formData.pincode}
-                onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <Input
                 label="City"
-                value={formData.city}
-                onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
                 required
               />
-
               <Input
-                label="Landmark (Optional)"
-                placeholder="e.g. Opposite ICICI Bank"
-                value={formData.landmark}
-                onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
+                label="Postal Code (PIN)"
+                value={form.pincode}
+                onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+                required
               />
             </div>
 
-            <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+            <label className="flex items-center gap-2 text-xs text-muted cursor-pointer font-medium mt-2">
               <input
                 type="checkbox"
-                checked={formData.isDefault}
-                onChange={(e) => setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                checked={form.isDefault}
+                onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
               />
-              <span>Set as my default service address</span>
+              <span>Set as default service address</span>
             </label>
           </form>
         </Modal>
+
       </div>
     </div>
   );

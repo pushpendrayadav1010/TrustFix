@@ -1,764 +1,870 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { providerService } from '../../services/providerService';
 import { categoryService } from '../../services/categoryService';
+import { providerService } from '../../services/providerService';
 import { userService } from '../../services/userService';
 import { bookingService } from '../../services/bookingService';
-import { MapView } from '../../components/map/MapView';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
-import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
-import { CategoryIcon } from '../../utils/categoryIcons';
-import { formatCurrency } from '../../utils/formatters';
+import { Input } from '../../components/common/Input';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { formatCurrency, formatDate } from '../../utils/formatters';
+import { resolveServiceImage } from '../../utils/imageResolver';
 import {
-  ShieldCheck,
-  CheckCircle2,
+  Wrench,
+  User,
+  Calendar,
   Clock,
   MapPin,
-  Calendar,
-  Star,
-  ChevronRight,
-  Layers,
-  Wrench,
-  UserCheck,
-  Sparkles,
-  Info
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  ShieldCheck,
+  Plus,
+  AlertCircle,
+  Check,
+  Shield
 } from 'lucide-react';
 
 export const BookServicePage = () => {
-  const [searchParams] = useSearchParams();
-  const initialProviderId = searchParams.get('providerId') || null;
-  const initialServiceId = searchParams.get('serviceId') || null;
-  const initialCategoryParam = searchParams.get('category') || null;
-
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialServiceId = searchParams.get('serviceId') || '';
+  const initialProviderId = searchParams.get('providerId') || '';
+  const initialCategory = searchParams.get('category') || '';
+  const initialDate = searchParams.get('date') || '';
+
   const navigate = useNavigate();
 
+  // Wizard Step State (1 to 5)
+  const [step, setStep] = useState(initialServiceId ? (initialProviderId ? 3 : 2) : 1);
+
   // Data State
-  const [categories, setCategories] = useState([]);
-  const [allServices, setAllServices] = useState([]);
-  const [allProviders, setAllProviders] = useState([]);
+  const [services, setServices] = useState([]);
+  const [providers, setProviders] = useState([]);
   const [addresses, setAddresses] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Selection State
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedServiceId, setSelectedServiceId] = useState(null);
-  const [selectedProviderId, setSelectedProviderId] = useState(null);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
-
-  // Form State
-  const [date, setDate] = useState(() => {
+  // Selected Booking Form State
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (initialDate) return initialDate;
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().split('T')[0];
   });
-  const [time, setTime] = useState('11:00 AM');
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [selectedTime, setSelectedTime] = useState('10:00 AM - 12:00 PM');
+  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [issueDescription, setIssueDescription] = useState('');
+
+  // Add Address Modal State
+  const [addAddressModalOpen, setAddAddressModalOpen] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    flat: '',
+    street: '',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    pincode: '400053',
+    label: 'Home',
+  });
+  const [addingAddress, setAddingAddress] = useState(false);
+
+  // Submit State
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [bookingSuccess, setBookingSuccess] = useState(null);
+  const [bookingError, setBookingError] = useState('');
 
-  const timeSlots = [
-    '09:00 AM',
-    '11:00 AM',
-    '01:30 PM',
-    '03:30 PM',
-    '05:00 PM',
-    '06:30 PM'
-  ];
-
-  // =========================================================================
-  // Load All Context Data (Categories, Services, Providers, Addresses)
-  // =========================================================================
+  // Fetch Services, Providers, Addresses
   useEffect(() => {
-    const loadBookingContext = async () => {
-      setLoading(true);
-      setError(null);
+    const initData = async () => {
+      setLoadingData(true);
       try {
-        const [fetchedCats, fetchedServices, fetchedProviders, fetchedAddrs] = await Promise.all([
-          categoryService.getCategories().catch(() => []),
-          categoryService.getServices().catch(() => []),
-          providerService.getVerifiedProviders().catch(() => []),
-          user?.id ? userService.getAddresses(user.id).catch(() => []) : Promise.resolve([])
+        const [allServs, allProvs, userAddrs] = await Promise.all([
+          categoryService.getServices(),
+          providerService.getVerifiedProviders(),
+          user?.id ? userService.getAddresses(user.id) : Promise.resolve([])
         ]);
 
-        setCategories(fetchedCats || []);
-        setAllServices(fetchedServices || []);
-        setAllProviders(fetchedProviders || []);
+        setServices(allServs);
+        setProviders(allProvs);
+        setAddresses(userAddrs);
 
-        // Manage User Addresses
-        let userAddrs = fetchedAddrs;
-        if (!userAddrs || userAddrs.length === 0) {
-          try {
-            const userId = user?.id || 4;
-            const createdAddr = await userService.addAddress(userId, {
-              flat: '101, Palm Beach Residency',
-              street: 'Sector 15, Vashi',
-              city: 'Navi Mumbai',
-              state: 'Maharashtra',
-              pincode: '400703',
-              landmark: 'Near Bus Depot'
-            });
-            userAddrs = [createdAddr];
-          } catch (addrErr) {
-            console.warn('Address creation fallback warning:', addrErr);
-          }
-        }
-        setAddresses(userAddrs || []);
-        if (userAddrs && userAddrs.length > 0) {
+        if (userAddrs.length > 0) {
           const defaultAddr = userAddrs.find(a => a.isDefault) || userAddrs[0];
           setSelectedAddressId(defaultAddr.id);
         }
 
-        // =====================================================================
-        // Resolve Initial Service & Provider smartly based on query params
-        // =====================================================================
-        let initialProv = null;
-        let initialServ = null;
-
-        if (initialProviderId) {
-          initialProv = fetchedProviders.find(p => String(p.id) === String(initialProviderId));
-        }
-
+        // Auto-select initial service
         if (initialServiceId) {
-          initialServ = fetchedServices.find(s => String(s.id) === String(initialServiceId));
+          const foundServ = allServs.find(s => String(s.id) === String(initialServiceId));
+          if (foundServ) setSelectedService(foundServ);
+        } else if (allServs.length > 0) {
+          setSelectedService(allServs[0]);
         }
 
-        // If provider is specified but service is not:
-        // Match the service corresponding to this provider's category/trade!
-        if (initialProv && !initialServ) {
-          const provTrade = (initialProv.service || '').toLowerCase();
-          const matchingServices = fetchedServices.filter(s => {
-            const catName = (s.categoryName || '').toLowerCase();
-            const servName = (s.name || '').toLowerCase();
-            return catName.includes(provTrade) || servName.includes(provTrade) || provTrade.includes(catName);
-          });
-
-          if (matchingServices.length > 0) {
-            initialServ = matchingServices[0];
-          }
+        // Auto-select initial provider
+        if (initialProviderId) {
+          const foundProv = allProvs.find(p => String(p.id) === String(initialProviderId));
+          if (foundProv) setSelectedProvider(foundProv);
         }
-
-        // If category is passed in URL:
-        if (!initialServ && initialCategoryParam) {
-          const catParamLower = initialCategoryParam.toLowerCase();
-          const matchingServices = fetchedServices.filter(s =>
-            (s.categoryName || '').toLowerCase().includes(catParamLower) ||
-            (s.name || '').toLowerCase().includes(catParamLower)
-          );
-          if (matchingServices.length > 0) {
-            initialServ = matchingServices[0];
-          }
-        }
-
-        // Final fallback for service:
-        if (!initialServ && fetchedServices.length > 0) {
-          initialServ = fetchedServices[0];
-        }
-
-        // If service is selected but provider is not:
-        // Match a provider with this service's trade!
-        if (initialServ && !initialProv) {
-          const servCat = (initialServ.categoryName || '').toLowerCase();
-          const matchingProvs = fetchedProviders.filter(p => {
-            const pTrade = (p.service || '').toLowerCase();
-            return servCat.includes(pTrade) || pTrade.includes(servCat);
-          });
-          if (matchingProvs.length > 0) {
-            initialProv = matchingProvs[0];
-          } else if (fetchedProviders.length > 0) {
-            initialProv = fetchedProviders[0];
-          }
-        }
-
-        if (initialServ) {
-          setSelectedServiceId(initialServ.id);
-          setSelectedCategory(initialServ.categoryName || 'ALL');
-        }
-
-        if (initialProv) {
-          setSelectedProviderId(initialProv.id);
-        }
-
       } catch (err) {
-        console.error('Error loading booking configuration:', err);
-        setError(err.message || 'Failed to load booking configuration');
+        console.error('Failed to load booking data:', err);
       } finally {
-        setLoading(false);
+        setLoadingData(false);
       }
     };
 
-    loadBookingContext();
-  }, [initialProviderId, initialServiceId, initialCategoryParam, user?.id]);
+    initData();
+  }, [user?.id, initialServiceId, initialProviderId]);
 
-  // =========================================================================
-  // Active Entities Resolution
-  // =========================================================================
-  const activeService = useMemo(() => {
-    return allServices.find(s => s.id === Number(selectedServiceId)) || allServices[0] || null;
-  }, [allServices, selectedServiceId]);
-
-  const activeProvider = useMemo(() => {
-    return allProviders.find(p => p.id === Number(selectedProviderId)) || null;
-  }, [allProviders, selectedProviderId]);
-
-  // Filtered Services according to Category Tab
-  const displayedServices = useMemo(() => {
-    if (selectedCategory === 'ALL') return allServices;
-    return allServices.filter(s =>
-      (s.categoryName || '').toLowerCase().includes(selectedCategory.toLowerCase()) ||
-      (s.name || '').toLowerCase().includes(selectedCategory.toLowerCase())
-    );
-  }, [allServices, selectedCategory]);
-
-  // Matching Providers for the currently selected service
-  const matchingProviders = useMemo(() => {
-    if (!activeService) return allProviders;
-    const servCat = (activeService.categoryName || '').toLowerCase();
-    const matches = allProviders.filter(p => {
-      const pTrade = (p.service || '').toLowerCase();
-      return servCat.includes(pTrade) || pTrade.includes(servCat);
-    });
-    return matches.length > 0 ? matches : allProviders;
-  }, [allProviders, activeService]);
-
-  // Handle Category Change
-  const handleCategorySelect = (catName) => {
-    setSelectedCategory(catName);
-    const candidateServices = catName === 'ALL'
-      ? allServices
-      : allServices.filter(s => (s.categoryName || '').toLowerCase().includes(catName.toLowerCase()));
-
-    if (candidateServices.length > 0) {
-      const newService = candidateServices[0];
-      setSelectedServiceId(newService.id);
-
-      // Auto match provider
-      const servCat = (newService.categoryName || '').toLowerCase();
-      const matchProv = allProviders.find(p => {
+  // When selected service changes, filter matching providers
+  const availableProviders = selectedService
+    ? providers.filter(p => {
         const pTrade = (p.service || '').toLowerCase();
-        return servCat.includes(pTrade) || pTrade.includes(servCat);
-      });
-      if (matchProv) {
-        setSelectedProviderId(matchProv.id);
-      }
-    }
-  };
+        const sCat = (selectedService.categoryName || '').toLowerCase();
+        return pTrade.includes(sCat) || sCat.includes(pTrade) || pTrade.includes('repair');
+      })
+    : providers;
 
-  // Handle Service Selection
-  const handleServiceSelect = (serviceItem) => {
-    setSelectedServiceId(serviceItem.id);
-    if (serviceItem.categoryName) {
-      setSelectedCategory(serviceItem.categoryName);
-    }
+  const timeSlots = [
+    { label: '09:00 AM - 11:00 AM', tag: 'Morning' },
+    { label: '11:00 AM - 01:00 PM', tag: 'Midday' },
+    { label: '02:00 PM - 04:00 PM', tag: 'Afternoon' },
+    { label: '04:00 PM - 06:00 PM', tag: 'Evening' },
+    { label: '06:00 PM - 08:00 PM', tag: 'Late Evening' },
+  ];
 
-    // Auto-select a matching provider for this service if current provider doesn't match
-    const servCat = (serviceItem.categoryName || '').toLowerCase();
-    const currentProvTrade = (activeProvider?.service || '').toLowerCase();
-    if (!servCat.includes(currentProvTrade) && !currentProvTrade.includes(servCat)) {
-      const matchProv = allProviders.find(p => {
-        const pTrade = (p.service || '').toLowerCase();
-        return servCat.includes(pTrade) || pTrade.includes(servCat);
-      });
-      if (matchProv) {
-        setSelectedProviderId(matchProv.id);
-      }
-    }
-  };
-
-  // =========================================================================
-  // Pricing Calculation
-  // =========================================================================
-  const selectedAddress = addresses.find(a => a.id === Number(selectedAddressId)) || addresses[0];
-  const basePrice = Number(activeService?.basePrice || activeService?.price || activeProvider?.startingPrice || 499);
-  const tax = +(basePrice * 0.18).toFixed(2);
-  const totalPrice = +(basePrice + tax).toFixed(2);
-
-  // =========================================================================
-  // Form Submission
-  // =========================================================================
-  const handleConfirmBooking = async (e) => {
+  const handleAddAddressSubmit = async (e) => {
     e.preventDefault();
+    if (!newAddress.flat.trim()) return;
+    setAddingAddress(true);
+    try {
+      const created = await userService.addAddress(user.id, newAddress);
+      setAddresses(prev => [...prev, created]);
+      setSelectedAddressId(created.id);
+      setAddAddressModalOpen(false);
+      setNewAddress({ flat: '', street: '', city: 'Mumbai', state: 'Maharashtra', pincode: '400053', label: 'Home' });
+    } catch (err) {
+      alert(err.message || 'Failed to add address');
+    } finally {
+      setAddingAddress(false);
+    }
+  };
+
+  const handleFinalBooking = async () => {
+    if (!selectedService) {
+      setBookingError('Please select a service');
+      return;
+    }
+    if (!selectedAddressId) {
+      setBookingError('Please select a service address');
+      return;
+    }
+
     setSubmitting(true);
-    setError(null);
+    setBookingError('');
 
     try {
-      let targetAddressId = selectedAddress?.id || (addresses.length > 0 ? addresses[0].id : null);
-      const userId = user?.id || 4;
+      const payload = {
+        customerId: user.id,
+        serviceId: selectedService.id,
+        providerId: selectedProvider?.id || undefined,
+        addressId: selectedAddressId,
+        date: selectedDate,
+        time: selectedTime,
+        price: selectedService.basePrice || selectedService.price || 499,
+        description: issueDescription || `${selectedService.name} booking request`,
+      };
 
-      if (!targetAddressId) {
-        const newAddr = await userService.addAddress(userId, {
-          flat: '101, Service Apartment',
-          street: 'Andheri West',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          pincode: '400053',
-          landmark: 'Home Address'
-        });
-        targetAddressId = newAddr.id;
-      }
-
-      if (!activeService?.id) {
-        throw new Error('Please select a valid service to book.');
-      }
-
-      await bookingService.createBooking({
-        customerId: user?.id,
-        serviceId: activeService.id,
-        addressId: targetAddressId,
-        providerId: activeProvider?.id || (matchingProviders.length > 0 ? matchingProviders[0].id : null),
-        date,
-        time,
-        price: totalPrice,
-        description: description.trim() || `Booked ${activeService.name} with certified technician`
-      });
-
-      // Redirect to customer bookings page with success alert
-      navigate('/customer/bookings?success=true');
+      const result = await bookingService.createBooking(payload);
+      setBookingSuccess(result);
     } catch (err) {
-      console.error('Booking submission failed:', err);
-      setError(err.message || 'Failed to create booking.');
+      setBookingError(err.message || 'Failed to place booking. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <LoadingSpinner message="Preparing booking configuration..." />;
+  if (loadingData) {
+    return (
+      <div>
+        <DashboardHeader title="Book a Service" subtitle="Loading booking wizard..." />
+        <div className="dashboard-content">
+          <LoadingSpinner message="Preparing service scheduling catalog..." />
+        </div>
+      </div>
+    );
+  }
+
+  // SUCCESS SCREEN
+  if (bookingSuccess) {
+    return (
+      <div>
+        <DashboardHeader title="Booking Confirmed" subtitle="Your service order has been placed" />
+        <div className="dashboard-content">
+          <div className="card" style={{ maxWidth: '640px', margin: '2rem auto', padding: '2.5rem', textAlign: 'center', backgroundColor: 'var(--white)' }}>
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--success-100)',
+                color: 'var(--success-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.25rem auto',
+              }}
+            >
+              <CheckCircle2 size={36} strokeWidth={2.4} />
+            </div>
+
+            <span className="badge badge-verified mb-2" style={{ margin: '0 auto' }}>
+              ₹0 Advance • Pay on Completion
+            </span>
+
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)', margin: '0.75rem 0 0.5rem 0' }}>
+              Service Appointment Scheduled!
+            </h2>
+            <p className="text-xs text-muted mb-6">
+              Booking Ref: <strong className="font-mono text-primary">{bookingSuccess.bookingReference}</strong>
+            </p>
+
+            <div
+              style={{
+                backgroundColor: 'var(--neutral-50)',
+                padding: '1.25rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--neutral-200)',
+                textAlign: 'left',
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              <div className="flex justify-between py-1 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                <span className="text-muted">Service</span>
+                <strong>{selectedService?.name}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                <span className="text-muted">Specialist</span>
+                <strong>{selectedProvider?.name || 'Assigned Verified Pro'}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                <span className="text-muted">Date & Time</span>
+                <strong>{formatDate(selectedDate)} at {selectedTime}</strong>
+              </div>
+              <div className="flex justify-between py-1 font-bold text-primary">
+                <span>Total Amount Due</span>
+                <span>{formatCurrency(selectedService?.basePrice || 499)}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link to={`/customer/bookings/${bookingSuccess.id}`} className="btn btn-primary">
+                <span>View Order Details</span>
+                <ArrowRight size={14} />
+              </Link>
+              <Link to="/customer/bookings" className="btn btn-secondary">
+                My Bookings
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const stepsList = [
+    { num: 1, label: 'Service' },
+    { num: 2, label: 'Provider' },
+    { num: 3, label: 'Date & Slot' },
+    { num: 4, label: 'Address' },
+    { num: 5, label: 'Confirm' },
+  ];
 
   return (
-    <div className="book-service-page" style={{ padding: '2rem 0 4rem 0' }}>
-      <div className="container">
+    <div>
+      <DashboardHeader
+        title="Schedule Home Service"
+        subtitle="Complete 5 simple steps to book verified doorstep technicians."
+      />
+
+      <div className="dashboard-content">
         
-        {/* Header */}
-        <div className="mb-6">
-          <nav style={{ marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Link to="/customer/dashboard">Dashboard</Link>
-            <ChevronRight size={14} />
-            <Link to="/services">Services</Link>
-            <ChevronRight size={14} />
-            <span style={{ color: 'var(--neutral-800)', fontWeight: 600 }}>Book Appointment</span>
-          </nav>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
-            Schedule Verified Service Appointment
-          </h1>
-          <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
-            Choose your service, select a certified local pro, and confirm on-time doorstep visit with zero advance payment.
-          </p>
+        {/* STEP PROGRESS INDICATOR */}
+        <div className="card mb-6" style={{ padding: '1rem 1.5rem', backgroundColor: 'var(--white)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'relative',
+              maxWidth: '780px',
+              margin: '0 auto',
+            }}
+          >
+            {stepsList.map((s, idx) => {
+              const isDone = step > s.num;
+              const isActive = step === s.num;
+              return (
+                <button
+                  key={s.num}
+                  type="button"
+                  onClick={() => s.num < step && setStep(s.num)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: s.num <= step ? 'pointer' : 'default',
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      backgroundColor: isDone ? 'var(--success-600)' : isActive ? 'var(--primary-700)' : 'var(--neutral-200)',
+                      color: isDone || isActive ? '#fff' : 'var(--neutral-600)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      marginBottom: '4px',
+                      boxShadow: isActive ? '0 0 0 3px var(--primary-100)' : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {isDone ? <Check size={16} strokeWidth={3} /> : `0${s.num}`}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? 'var(--primary-800)' : 'var(--neutral-600)',
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {error && <ErrorMessage message={error} />}
-
-        <form onSubmit={handleConfirmBooking}>
-          <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+        {/* 2-COLUMN WIZARD LAYOUT */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.8fr) minmax(300px, 1.1fr)',
+            gap: '1.5rem',
+            alignItems: 'start',
+          }}
+        >
+          {/* LEFT WIZARD CONTENT */}
+          <div className="card" style={{ padding: '2rem', backgroundColor: 'var(--white)' }}>
             
-            {/* Left Column: Booking Form Steps */}
-            <div className="flex flex-col gap-6">
+            {bookingError && (
+              <div className="alert alert-danger mb-4">
+                <AlertCircle size={18} />
+                <span>{bookingError}</span>
+              </div>
+            )}
 
-              {/* Step 1: Choose Service & Category */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Wrench size={18} color="var(--primary-700)" />
-                    <span>1. Select Service / Work</span>
-                  </h4>
-                  <span className="badge badge-confirmed">
-                    {activeService ? activeService.categoryName : 'Choose Work'}
-                  </span>
-                </div>
+            {/* STEP 1: SELECT SERVICE */}
+            {step === 1 && (
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                  Step 01: Choose Service
+                </h3>
+                <p className="text-xs text-muted mb-4">Select the specific home maintenance or repair task needed.</p>
 
-                {/* Category Filter Pills */}
-                <div className="flex items-center gap-2 flex-wrap mb-4">
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${selectedCategory === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => handleCategorySelect('ALL')}
-                    style={{ fontSize: '11px', padding: '5px 10px' }}
-                  >
-                    <Layers size={12} />
-                    <span>All Services</span>
-                  </button>
-
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      className={`btn btn-sm ${selectedCategory.toLowerCase() === cat.name.toLowerCase() ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => handleCategorySelect(cat.name)}
-                      style={{ fontSize: '11px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                    >
-                      <CategoryIcon categoryName={cat.name} size={12} />
-                      <span>{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Service Cards Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
-                  {displayedServices.map((s) => {
-                    const isSelected = activeService?.id === s.id;
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
+                  {services.map((serv) => {
+                    const isSelected = selectedService?.id === serv.id;
                     return (
                       <div
-                        key={s.id}
-                        onClick={() => handleServiceSelect(s)}
+                        key={serv.id}
+                        onClick={() => setSelectedService(serv)}
+                        className="card card-hoverable cursor-pointer"
                         style={{
+                          padding: '1rem',
                           border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
                           backgroundColor: isSelected ? 'var(--primary-50)' : 'var(--white)',
-                          borderRadius: 'var(--radius-md)',
-                          padding: '12px',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          boxShadow: isSelected ? '0 2px 8px rgba(30, 58, 138, 0.12)' : 'none'
                         }}
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-2xs font-bold uppercase" style={{ color: 'var(--primary-800)', letterSpacing: '0.04em' }}>
-                              {s.categoryName}
-                            </span>
-                            {isSelected && <CheckCircle2 size={14} color="var(--primary-700)" />}
-                          </div>
-                          <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--neutral-900)' }}>
-                            {s.name}
-                          </h5>
-                          <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.4 }}>
-                            {s.description?.length > 70 ? `${s.description.slice(0, 70)}...` : s.description}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between" style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                          <span className="text-xs text-muted flex items-center gap-1">
-                            <Clock size={11} />
-                            <span>{s.durationInMinutes || s.durationMinutes || 45} mins</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="badge badge-confirmed" style={{ fontSize: '10px' }}>
+                            {serv.categoryName}
                           </span>
-                          <strong style={{ fontSize: '0.95rem', color: 'var(--primary-800)' }}>
-                            {formatCurrency(s.basePrice || s.price || 499)}
-                          </strong>
+                          <strong className="text-xs text-primary">{formatCurrency(serv.basePrice || 499)}</strong>
                         </div>
+                        <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '4px 0' }}>{serv.name}</h5>
+                        <span className="text-2xs text-muted">~{serv.durationMinutes || 60} mins</span>
                       </div>
                     );
                   })}
                 </div>
-              </div>
 
-              {/* Step 2: Assigned Professional (Provider) */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <UserCheck size={18} color="var(--primary-700)" />
-                    <span>2. Assigned Verified Professional</span>
-                  </h4>
-                  <span className="badge badge-verified">
-                    <ShieldCheck size={12} strokeWidth={2.2} />
-                    Verified Specialists
-                  </span>
+                <div className="flex justify-end">
+                  <Button variant="primary" onClick={() => setStep(2)}>
+                    <span>Continue to Provider</span>
+                    <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: SELECT PROVIDER */}
+            {step === 2 && (
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                  Step 02: Select Service Provider
+                </h3>
+                <p className="text-xs text-muted mb-4">Pick a verified expert or let TrustFix automatically assign the best nearby specialist.</p>
+
+                {/* Option: Auto Assign */}
+                <div
+                  onClick={() => setSelectedProvider(null)}
+                  className="card card-hoverable cursor-pointer mb-3"
+                  style={{
+                    padding: '1rem 1.25rem',
+                    border: selectedProvider === null ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
+                    backgroundColor: selectedProvider === null ? 'var(--primary-50)' : 'var(--white)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--success-100)',
+                          color: 'var(--success-700)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <ShieldCheck size={20} />
+                      </div>
+                      <div>
+                        <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>
+                          Auto-Assign Best Verified Specialist
+                        </h5>
+                        <span className="text-xs text-muted">Recommended • Fast Dispatch & Nearest Availability</span>
+                      </div>
+                    </div>
+                    {selectedProvider === null && (
+                      <span className="badge badge-verified">Selected</span>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-xs text-muted mb-3">
-                  Select a certified technician specializing in <strong>{activeService?.categoryName || 'this service'}</strong>:
-                </p>
-
-                <div className="flex flex-col gap-2">
-                  {matchingProviders.map((p) => {
-                    const isSelected = activeProvider?.id === p.id;
+                {/* List of Specific Providers */}
+                <div className="flex flex-col gap-3 mb-6">
+                  {availableProviders.map((p) => {
+                    const isSelected = selectedProvider?.id === p.id;
                     return (
                       <div
                         key={p.id}
-                        onClick={() => setSelectedProviderId(p.id)}
+                        onClick={() => setSelectedProvider(p)}
+                        className="card card-hoverable cursor-pointer"
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '12px',
-                          padding: '12px',
-                          borderRadius: 'var(--radius-md)',
+                          padding: '1rem 1.25rem',
                           border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
                           backgroundColor: isSelected ? 'var(--primary-50)' : 'var(--white)',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: isSelected ? '0 2px 6px rgba(30, 58, 138, 0.1)' : 'none'
                         }}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={p.avatar}
-                            alt={p.name}
-                            style={{
-                              width: '46px',
-                              height: '46px',
-                              borderRadius: 'var(--radius-md)',
-                              objectFit: 'cover',
-                              border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-300)'
-                            }}
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>
-                                {p.name}
-                              </h5>
-                              <span className="badge badge-verified" style={{ fontSize: '9px', padding: '1px 5px' }}>
-                                Verified Pro
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={p.avatar}
+                              alt={p.name}
+                              style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
+                            />
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>{p.name}</h5>
+                                <span className="badge badge-verified" style={{ fontSize: '10px', padding: '1px 5px' }}>Verified</span>
+                              </div>
+                              <span className="text-xs text-muted">
+                                {p.companyName} • ★{p.rating} ({p.experience} yrs exp)
                               </span>
                             </div>
-                            <p className="text-xs text-muted" style={{ margin: 0, marginTop: '2px' }}>
-                              {p.companyName || `${p.service} Specialist`} • {p.experience} yrs exp • Area: {p.serviceArea || p.city}
-                            </p>
                           </div>
-                        </div>
 
-                        <div className="text-right flex items-center gap-3 flex-shrink-0">
-                          <div>
-                            <div className="flex items-center gap-1 justify-end">
-                              <Star size={11} fill="#F59E0B" color="#F59E0B" />
-                              <span style={{ fontSize: '12px', fontWeight: 700 }}>{p.rating}</span>
-                            </div>
-                            <span className="text-2xs text-muted">({p.reviewCount} reviews)</span>
+                          <div className="text-right">
+                            <span className="text-xs font-bold text-primary">{p.city || 'Mumbai'}</span>
+                            <span className="text-2xs text-muted block">Radius: {p.serviceRadiusKm || 25} km</span>
                           </div>
-                          <div
-                            style={{
-                              width: '18px',
-                              height: '18px',
-                              borderRadius: '50%',
-                              border: isSelected ? '5px solid var(--primary-700)' : '2px solid var(--neutral-400)',
-                              backgroundColor: '#fff'
-                            }}
-                          />
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(1)}>
+                    <ArrowLeft size={14} />
+                    <span>Back</span>
+                  </Button>
+                  <Button variant="primary" onClick={() => setStep(3)}>
+                    <span>Continue to Schedule</span>
+                    <ArrowRight size={14} />
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* Step 3: Date & Time Slot */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Calendar size={18} color="var(--primary-700)" />
-                  <span>3. Choose Date & Time Slot</span>
-                </h4>
+            {/* STEP 3: DATE & TIME */}
+            {step === 3 && (
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                  Step 03: Select Date & Time Slot
+                </h3>
+                <p className="text-xs text-muted mb-4">Choose when you would like the certified specialist to arrive.</p>
 
-                <div className="form-group mb-4">
-                  <label className="form-label">Service Date <span className="required">*</span></label>
+                {/* Date Picker */}
+                <div className="form-group mb-5">
+                  <label className="form-label font-bold">Appointment Date</label>
                   <input
                     type="date"
                     className="form-control"
-                    value={date}
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setDate(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="form-group mb-0">
-                  <label className="form-label">Available Time Slots <span className="required">*</span></label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
-                    {timeSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        className={`btn btn-sm ${time === slot ? 'btn-primary' : 'btn-secondary'} flex items-center justify-center gap-1`}
-                        onClick={() => setTime(slot)}
-                      >
-                        <Clock size={12} />
-                        <span>{slot}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4: Address Selection & Location Preview */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MapPin size={18} color="var(--primary-700)" />
-                    <span>4. Service Location Address</span>
-                  </h4>
-                  <Link to="/customer/addresses" className="text-xs font-semibold" style={{ color: 'var(--primary-700)' }}>
-                    + Manage Addresses
-                  </Link>
-                </div>
-
-                <div className="flex flex-col gap-2 mb-4">
-                  {addresses.map((addr) => (
-                    <label
-                      key={addr.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '10px',
-                        padding: '12px',
-                        borderRadius: 'var(--radius-md)',
-                        border: selectedAddressId === addr.id ? '2px solid var(--primary-700)' : '1px solid var(--neutral-300)',
-                        backgroundColor: selectedAddressId === addr.id ? 'var(--primary-50)' : 'var(--white)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="addressSelection"
-                        checked={selectedAddressId === addr.id}
-                        onChange={() => setSelectedAddressId(addr.id)}
-                        style={{ marginTop: '3px' }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <strong style={{ fontSize: '0.9rem' }}>{addr.label || 'Home'}</strong>
-                          {addr.isDefault && <span className="badge badge-confirmed" style={{ fontSize: '10px' }}>Default</span>}
+                {/* Time Slots */}
+                <div className="form-group mb-6">
+                  <label className="form-label font-bold">Available Time Slots</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
+                    {timeSlots.map((slot) => {
+                      const isSelected = selectedTime === slot.label;
+                      return (
+                        <div
+                          key={slot.label}
+                          onClick={() => setSelectedTime(slot.label)}
+                          className="card card-hoverable cursor-pointer"
+                          style={{
+                            padding: '0.875rem',
+                            textAlign: 'center',
+                            border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
+                            backgroundColor: isSelected ? 'var(--primary-50)' : 'var(--white)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <span className="text-2xs font-bold text-muted uppercase block">{slot.tag}</span>
+                          <strong className="text-xs" style={{ color: isSelected ? 'var(--primary-900)' : 'var(--neutral-800)' }}>
+                            {slot.label}
+                          </strong>
                         </div>
-                        <p className="text-xs text-muted" style={{ margin: 0, marginTop: '2px' }}>
-                          {addr.flat}, {addr.street}, {addr.city} - {addr.pincode}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Map Location Preview for Selected Address */}
-                {selectedAddress && activeProvider && (
-                  <div>
-                    <span className="text-xs text-muted block mb-2 font-semibold flex items-center gap-1">
-                      <MapPin size={12} color="var(--primary-700)" />
-                      <span>Location Map Preview:</span>
-                    </span>
-                    <div style={{ height: '180px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                      <MapView
-                        locations={[{ id: 99, name: 'Service Location', latitude: selectedAddress.latitude, longitude: selectedAddress.longitude, service: activeProvider.service, verified: true }]}
-                        center={{ latitude: selectedAddress.latitude, longitude: selectedAddress.longitude, city: selectedAddress.city }}
-                        customerLocation={{ latitude: selectedAddress.latitude, longitude: selectedAddress.longitude }}
-                        height="180px"
-                        showServiceRadius={false}
-                        interactive={false}
-                      />
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(2)}>
+                    <ArrowLeft size={14} />
+                    <span>Back</span>
+                  </Button>
+                  <Button variant="primary" onClick={() => setStep(4)}>
+                    <span>Continue to Address</span>
+                    <ArrowRight size={14} />
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* Step 5: Problem Description */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-                  5. Describe The Issue (Optional)
-                </h4>
-                <textarea
-                  className="form-control"
-                  rows="3"
-                  placeholder="Describe your issue in detail (e.g. Switch sparking, bathroom drain blocked, AC not cooling)..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-            </div>
-
-            {/* Right Column: Order Summary & Confirmation Box */}
-            <div>
-              <div className="card" style={{ padding: '1.75rem', position: 'sticky', top: '90px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.25rem', borderBottom: '1px solid var(--neutral-200)', paddingBottom: '0.75rem' }}>
-                  Booking Summary
-                </h3>
-
-                {/* Selected Service Card */}
-                {activeService && (
-                  <div style={{ padding: '12px', backgroundColor: 'var(--neutral-50)', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', border: '1px solid var(--neutral-200)' }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-2xs font-bold uppercase" style={{ color: 'var(--primary-700)' }}>{activeService.categoryName}</span>
-                      <span className="text-xs text-muted flex items-center gap-1"><Clock size={11} /> {activeService.durationInMinutes || 45} mins</span>
-                    </div>
-                    <strong style={{ fontSize: '0.95rem', color: 'var(--neutral-900)', display: 'block' }}>{activeService.name}</strong>
-                  </div>
-                )}
-
-                {/* Selected Provider Card */}
-                {activeProvider && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', backgroundColor: 'var(--primary-50)', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', border: '1px solid var(--primary-100)' }}>
-                    <img
-                      src={activeProvider.avatar}
-                      alt={activeProvider.name}
-                      style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <strong style={{ fontSize: '0.875rem', color: 'var(--neutral-900)', display: 'block' }}>{activeProvider.name}</strong>
-                      <span className="text-2xs text-muted">{activeProvider.companyName || `${activeProvider.service} Specialist`} • ⭐ {activeProvider.rating}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Price Breakdown */}
-                <div className="flex flex-col gap-3 mb-6 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted">Standard Labor Fee:</span>
-                    <strong style={{ color: 'var(--neutral-900)' }}>{formatCurrency(basePrice)}</strong>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-muted">GST (18%):</span>
-                    <span>{formatCurrency(tax)}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-muted">Safety & Verification Fee:</span>
-                    <span style={{ color: 'var(--success-700)', fontWeight: 700 }}>FREE</span>
-                  </div>
-
-                  <div
-                    style={{
-                      borderTop: '2px dashed var(--neutral-300)',
-                      paddingTop: '0.75rem',
-                      marginTop: '0.25rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                    }}
+            {/* STEP 4: ADDRESS SELECTION */}
+            {step === 4 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+                    Step 04: Service Address
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light text-xs flex items-center gap-1"
+                    onClick={() => setAddAddressModalOpen(true)}
                   >
-                    <span className="font-bold text-base">Total Estimated Price:</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-800)' }}>
-                      {formatCurrency(totalPrice)}
-                    </span>
+                    <Plus size={13} />
+                    <span>Add New Address</span>
+                  </button>
+                </div>
+                <p className="text-xs text-muted mb-4">Select the doorstep location where the service should be performed.</p>
+
+                {addresses.length === 0 ? (
+                  <div className="card text-center py-6 mb-4" style={{ backgroundColor: 'var(--neutral-50)' }}>
+                    <MapPin size={28} color="var(--neutral-400)" style={{ margin: '0 auto 8px auto' }} />
+                    <p className="text-xs text-muted mb-3">No saved addresses found in your account.</p>
+                    <Button variant="primary" size="sm" onClick={() => setAddAddressModalOpen(true)}>
+                      <Plus size={13} />
+                      <span>Add Delivery Address</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 mb-6">
+                    {addresses.map((addr) => {
+                      const isSelected = String(selectedAddressId) === String(addr.id);
+                      return (
+                        <div
+                          key={addr.id}
+                          onClick={() => setSelectedAddressId(addr.id)}
+                          className="card card-hoverable cursor-pointer"
+                          style={{
+                            padding: '1rem',
+                            border: isSelected ? '2px solid var(--primary-700)' : '1px solid var(--neutral-200)',
+                            backgroundColor: isSelected ? 'var(--primary-50)' : 'var(--white)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-2.5">
+                              <MapPin size={16} color="var(--primary-700)" style={{ marginTop: '2px' }} />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <strong className="text-sm font-bold">{addr.label || 'Home'}</strong>
+                                  {addr.isDefault && <span className="badge badge-confirmed" style={{ fontSize: '10px' }}>Default</span>}
+                                </div>
+                                <p className="text-xs text-muted mb-0 mt-1">
+                                  {addr.flat}, {addr.street}, {addr.city} - {addr.pincode}
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && <span className="badge badge-verified">Selected</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Issue Notes */}
+                <div className="form-group mb-6">
+                  <label className="form-label font-bold">Describe Your Issue or Instructions (Optional)</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    placeholder="e.g. Living room switchboard sparking, water leak under kitchen sink..."
+                    value={issueDescription}
+                    onChange={(e) => setIssueDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(3)}>
+                    <ArrowLeft size={14} />
+                    <span>Back</span>
+                  </Button>
+                  <Button variant="primary" disabled={!selectedAddressId} onClick={() => setStep(5)}>
+                    <span>Review & Confirm</span>
+                    <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: FINAL CONFIRMATION */}
+            {step === 5 && (
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                  Step 05: Review & Confirm Booking
+                </h3>
+                <p className="text-xs text-muted mb-4">Verify all appointment details before submitting with zero advance deposit.</p>
+
+                <div
+                  style={{
+                    backgroundColor: 'var(--neutral-50)',
+                    padding: '1.25rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--neutral-200)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    fontSize: '0.875rem',
+                    marginBottom: '1.5rem',
+                  }}
+                >
+                  <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <span className="text-muted">Selected Service:</span>
+                    <strong>{selectedService?.name}</strong>
+                  </div>
+
+                  <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <span className="text-muted">Specialist:</span>
+                    <strong>{selectedProvider?.name || 'Auto-Assigned Verified Specialist'}</strong>
+                  </div>
+
+                  <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <span className="text-muted">Schedule Date:</span>
+                    <strong>{formatDate(selectedDate)} ({selectedTime})</strong>
+                  </div>
+
+                  <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <span className="text-muted">Doorstep Address:</span>
+                    <strong className="text-truncate">
+                      {(() => {
+                        const a = addresses.find(x => String(x.id) === String(selectedAddressId));
+                        return a ? `${a.flat}, ${a.street}, ${a.city}` : 'Selected Address';
+                      })()}
+                    </strong>
+                  </div>
+
+                  <div className="flex justify-between pt-1 font-bold text-primary" style={{ fontSize: '1.05rem' }}>
+                    <span>Estimated Total:</span>
+                    <span>{formatCurrency(selectedService?.basePrice || 499)}</span>
                   </div>
                 </div>
 
-                {/* Trust Highlights */}
                 <div
                   style={{
                     backgroundColor: 'var(--success-50)',
                     border: '1px solid var(--success-100)',
                     borderRadius: 'var(--radius-md)',
-                    padding: '12px',
-                    marginBottom: '1.5rem',
-                    fontSize: '12px',
+                    padding: '0.875rem',
+                    fontSize: '11px',
                     color: 'var(--success-800)',
+                    marginBottom: '1.5rem',
                   }}
                 >
-                  <div className="flex items-center gap-1 font-bold mb-1">
-                    <CheckCircle2 size={14} color="var(--success-600)" />
-                    <span>Zero Advance Payment Required</span>
+                  <div className="flex items-center gap-1.5 font-semibold mb-1">
+                    <ShieldCheck size={14} color="var(--success-600)" />
+                    <span>TrustFix Booking Guarantee</span>
                   </div>
-                  <p style={{ margin: 0, color: 'var(--neutral-600)' }}>
-                    Pay securely via UPI, Card, or Cash only after service completion & your full satisfaction.
-                  </p>
+                  <span>100% verified technician doorstep visit. Pay securely after job completion and testing. 30-day warranty included.</span>
                 </div>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  block
-                  loading={submitting}
-                  style={{ padding: '0.875rem', fontSize: '1rem' }}
-                >
-                  Confirm & Schedule Appointment
-                </Button>
-
-                <p className="text-xs text-muted text-center mt-3">
-                  By confirming, you agree to TrustFix's 30-Day Service Warranty terms.
-                </p>
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(4)}>
+                    <ArrowLeft size={14} />
+                    <span>Back</span>
+                  </Button>
+                  <Button variant="primary" loading={submitting} onClick={handleFinalBooking}>
+                    <span>Confirm & Book (₹0 Advance)</span>
+                    <ArrowRight size={14} />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
-        </form>
+
+          {/* RIGHT: STICKY ORDER SUMMARY */}
+          <div style={{ position: 'sticky', top: '90px' }}>
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)', boxShadow: 'var(--shadow-md)' }}>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--neutral-900)' }}>
+                Booking Summary
+              </h4>
+
+              {selectedService ? (
+                <div>
+                  <div className="flex items-center gap-3 pb-3 mb-3 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <img
+                      src={resolveServiceImage(selectedService)}
+                      alt={selectedService.name}
+                      style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
+                    />
+                    <div>
+                      <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>{selectedService.name}</h5>
+                      <span className="text-xs text-muted font-semibold">{selectedService.categoryName}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 text-xs text-muted mb-4">
+                    <div className="flex justify-between">
+                      <span>Assigned Pro:</span>
+                      <strong className="text-neutral-800">{selectedProvider?.name || 'Auto-Dispatch'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Date:</span>
+                      <strong className="text-neutral-800">{formatDate(selectedDate)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Slot:</span>
+                      <strong className="text-neutral-800">{selectedTime}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Advance Fee:</span>
+                      <strong className="text-success">₹0.00</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-top" style={{ borderTop: '1px solid var(--neutral-200)' }}>
+                    <span className="text-xs text-muted font-bold uppercase">Estimated Amount:</span>
+                    <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                      {formatCurrency(selectedService.basePrice || 499)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted">Please choose a service to see summary details.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Add Address Modal */}
+        <Modal
+          isOpen={addAddressModalOpen}
+          onClose={() => setAddAddressModalOpen(false)}
+          title="Add New Service Address"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setAddAddressModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" loading={addingAddress} onClick={handleAddAddressSubmit}>
+                Save Address
+              </Button>
+            </>
+          }
+        >
+          <form onSubmit={handleAddAddressSubmit}>
+            <Input
+              label="Flat / House / Building"
+              placeholder="e.g. Flat 402, Green Meadows"
+              value={newAddress.flat}
+              onChange={(e) => setNewAddress({ ...newAddress, flat: e.target.value })}
+              required
+            />
+            <Input
+              label="Street / Area / Landmark"
+              placeholder="e.g. Link Road, Near Metro Station"
+              value={newAddress.street}
+              onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+              required
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="City"
+                value={newAddress.city}
+                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                required
+              />
+              <Input
+                label="Postal Code (PIN)"
+                value={newAddress.pincode}
+                onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                required
+              />
+            </div>
+          </form>
+        </Modal>
 
       </div>
     </div>

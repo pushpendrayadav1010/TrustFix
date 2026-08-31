@@ -631,3 +631,239 @@
   color: var(--warning-800);
   border: 1px solid var(--warning-200);
 }
+
+/* ============================================================
+   SPLIT-SCREEN AUTH LAYOUT
+   ============================================================ */
+.auth-split-layout {
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  background-color: var(--white);
+}
+
+.auth-split-left {
+  flex: 0 0 45%;
+  background: linear-gradient(145deg, #071A33 0%, #0B1E3B 60%, #0E254A 100%);
+  color: var(--white);
+  padding: 4rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-split-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.auth-split-left-content {
+  position: relative;
+  z-index: 2;
+  margin: auto 0;
+  max-width: 460px;
+}
+
+.auth-split-left-footer {
+  position: relative;
+  z-index: 2;
+  font-size: var(--font-size-xs);
+  color: var(--neutral-400);
+}
+
+.auth-split-right {
+  flex: 1;
+  background-color: var(--neutral-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  overflow-y: auto;
+}
+
+.auth-card-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (max-width: 960px) {
+  .auth-split-layout {
+    flex-direction: column;
+  }
+  .auth-split-left {
+    flex: 0 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+  .auth-split-right {
+    padding: 2rem 1.25rem;
+  }
+}
+
+/* ============================================================
+   HERO GUARANTEE CARD
+   ============================================================ */
+.hero-guarantee-card {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+  color: var(--white);
+  width: 100%;
+  max-width: 440px;
+}
+
+.hero-guarantee-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 1.25rem 0;
+}
+
+.hero-guarantee-item {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+}
+
+.hero-guarantee-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.hero-guarantee-label {
+  font-size: 0.75rem;
+  color: var(--primary-200);
+  font-weight: 500;
+}
+
+/* ============================================================
+   HOW IT WORKS 4-STEP WORKFLOW
+   ============================================================ */
+.step-workflow-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  position: relative;
+}
+
+.step-workflow-container::before {
+  content: '';
+  position: absolute;
+  top: 36px;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-300) 0%, var(--primary-600) 50%, var(--success-500) 100%);
+  z-index: 1;
+}
+
+.step-card {
+  background-color: var(--white);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.step-icon-badge {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-700) 100%);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
+  border: 3px solid var(--white);
+}
+
+.step-card.step-success .step-icon-badge {
+  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+}
+
+@media (max-width: 900px) {
+  .step-workflow-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .step-workflow-container::before {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .step-workflow-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   DARK TRUST PILLARS
+   ============================================================ */
+.dark-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.dark-trust-card {
+  background: linear-gradient(145deg, #0B1E3B 0%, #071A33 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  color: var(--white);
+  box-shadow: 0 10px 25px -5px rgba(11, 30, 59, 0.3);
+  transition: transform var(--transition-normal), border-color var(--transition-normal);
+}
+
+.dark-trust-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+.dark-trust-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  color: var(--primary-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dark-trust-card.trust-green .dark-trust-icon {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--success-400);
+}
+

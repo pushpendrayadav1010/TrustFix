@@ -1,170 +1,151 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
-import { Input } from '../../components/common/Input';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/FeedbackStates';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const CustomerProfilePage = () => {
   const { user, updateUser } = useAuth();
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    city: user?.city || '',
+    name: '',
+    email: '',
+    phone: '',
   });
-  const [fetching, setFetching] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
-    if (user?.id) {
-      setFetching(true);
-      userService.getUserProfile(user.id)
-        .then((fetchedUser) => {
-          if (isMounted && fetchedUser) {
-            setFormData({
-              name: fetchedUser.name || '',
-              email: fetchedUser.email || '',
-              phone: fetchedUser.phone || '',
-              city: fetchedUser.city || '',
-            });
-            updateUser(fetchedUser);
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to load user profile from server:', err);
-          if (isMounted) {
-            setError('Failed to load profile data from the server.');
-          }
-        })
-        .finally(() => {
-          if (isMounted) setFetching(false);
-        });
-    }
-    return () => { isMounted = false; };
-  }, [user?.id]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user?.id) return;
-
-    setSubmitting(true);
-    setError('');
-    setSaved(false);
-
-    try {
-      const updatedUser = await userService.updateUserProfile(user.id, {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: user.role || 'CUSTOMER',
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
       });
+      setLoading(false);
+    }
+  }, [user]);
 
-      updateUser(updatedUser);
-      setFormData(prev => ({
-        ...prev,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        phone: updatedUser.phone,
-      }));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      const updated = await userService.updateUserProfile(user.id, formData);
+      updateUser(updated);
+      setMessage('Profile settings saved successfully.');
     } catch (err) {
-      setError(err.message || 'Failed to update profile changes.');
+      setError(err.message || 'Failed to update profile.');
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
 
-  if (fetching && !formData.name) {
+  if (loading) {
     return (
-      <div className="customer-profile-page" style={{ padding: '4rem 0' }}>
-        <LoadingSpinner message="Loading user profile..." />
+      <div>
+        <DashboardHeader title="Profile Settings" subtitle="Loading..." />
+        <div className="dashboard-content">
+          <LoadingSpinner message="Fetching profile..." />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="customer-profile-page" style={{ padding: '2rem 0 4rem 0' }}>
-      <div className="container" style={{ maxWidth: '640px' }}>
-        
-        {/* Header */}
-        <div className="mb-6">
-          <span className="section-subtitle">Account Settings</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
-            Customer Profile
-          </h1>
-          <p className="text-xs text-muted">Update your contact information and communication preferences.</p>
-        </div>
+    <div>
+      <DashboardHeader
+        title="Profile Settings"
+        subtitle="Manage your personal information and contact details."
+      />
 
-        <div className="card" style={{ padding: '2rem' }}>
+      <div className="dashboard-content">
+        <div className="card" style={{ maxWidth: '680px', padding: '2rem', backgroundColor: 'var(--white)' }}>
+          
+          {message && (
+            <div className="alert alert-success mb-4">
+              <CheckCircle2 size={18} />
+              <span>{message}</span>
+            </div>
+          )}
+
           {error && (
-            <div className="alert alert-danger mb-4 flex items-center gap-2">
+            <div className="alert alert-danger mb-4">
               <AlertCircle size={18} />
               <span>{error}</span>
             </div>
           )}
 
-          {saved && (
-            <div className="alert alert-success mb-4 flex items-center gap-2">
-              <CheckCircle2 size={18} />
-              <span>Profile updated successfully!</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+          <div className="flex items-center gap-4 pb-6 mb-6 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
             <img
-              src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
+              src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
               alt={user?.name || 'User'}
-              style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: '72px', height: '72px', borderRadius: 'var(--radius-lg)', objectFit: 'cover', border: '2px solid var(--neutral-200)' }}
             />
             <div>
-              <h4 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>{user?.name || formData.name || 'User'}</h4>
-              <span className="text-xs text-muted font-semibold">Account Role: <strong>{user?.role || 'CUSTOMER'}</strong></span>
-              <p className="text-xs text-muted" style={{ margin: 0 }}>Registered User on TrustFix</p>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--neutral-900)' }}>
+                {user?.name}
+              </h3>
+              <span className="badge badge-confirmed mt-1" style={{ fontSize: '11px' }}>
+                Customer Account
+              </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <Input
-              label="Full Name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              required
-            />
+          <form onSubmit={handleSave}>
+            <div className="mb-6">
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--neutral-900)' }}>
+                Personal Information
+              </h4>
+              <Input
+                label="Full Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-            <Input
-              label="Email Address (Login ID)"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              required
-            />
+            <div className="mb-6">
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--neutral-900)' }}>
+                Contact Details
+              </h4>
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-            <Input
-              label="Phone Number (For Booking Updates)"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              required
-            />
-
-            <Input
-              label="City"
-              value={formData.city}
-              onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-            />
-
-            <Button type="submit" variant="primary" loading={submitting} style={{ marginTop: '0.5rem' }}>
-              Save Profile Changes
-            </Button>
+            <div className="flex justify-end pt-4 border-top" style={{ borderTop: '1px solid var(--neutral-200)' }}>
+              <Button type="submit" variant="primary" loading={saving} style={{ padding: '0.625rem 1.5rem', fontWeight: 700 }}>
+                Save Profile Changes
+              </Button>
+            </div>
           </form>
-        </div>
 
+        </div>
       </div>
     </div>
   );

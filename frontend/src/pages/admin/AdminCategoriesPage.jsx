@@ -1,270 +1,244 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
-import { CategoryIcon } from '../../utils/categoryIcons';
-import { sanitizeCategoryName, sanitizeCategoryDescription } from '../../utils/categoryIcons';
-import { Plus, Edit2, Trash2, CheckCircle2, AlertCircle, FolderTree } from 'lucide-react';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
+import { getCategoryIcon, sanitizeCategoryDescription, sanitizeCategoryName } from '../../utils/categoryIcons';
+import { Layers, Plus, Edit2, Trash2, Power } from 'lucide-react';
 
 export const AdminCategoriesPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actionSuccess, setActionSuccess] = useState(null);
 
-  // Form State
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    iconUrl: 'Wrench',
-    active: true,
-  });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Add / Edit Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [iconUrl, setIconUrl] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
       const data = await adminService.getCategories();
       setCategories(data);
     } catch (err) {
       console.error('Failed to load categories:', err);
-      setError('Unable to fetch categories from backend.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenCreate = () => {
-    setEditId(null);
-    setFormData({ name: '', description: '', iconUrl: 'Wrench', active: true });
-    setShowModal(true);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingCategory(null);
+    setName('');
+    setDescription('');
+    setIconUrl('');
+    setModalOpen(true);
   };
 
-  const handleOpenEdit = (cat) => {
-    setEditId(cat.id);
-    setFormData({
-      name: sanitizeCategoryName(cat.name) || '',
-      description: sanitizeCategoryDescription(cat.description) || '',
-      iconUrl: cat.iconUrl || 'Wrench',
-      active: cat.active !== false,
-    });
-    setShowModal(true);
+  const handleOpenEditModal = (cat) => {
+    setEditingCategory(cat);
+    setName(cat.name);
+    setDescription(cat.description || '');
+    setIconUrl(cat.iconUrl || '');
+    setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSaveCategory = async (e) => {
     e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
     try {
-      setActionSuccess(null);
-      if (editId) {
-        await adminService.updateCategory(editId, formData);
-        setActionSuccess(`Category '${formData.name}' updated successfully.`);
+      const payload = {
+        name,
+        description,
+        iconUrl: iconUrl || 'Wrench',
+        active: true,
+      };
+
+      if (editingCategory) {
+        await adminService.updateCategory(editingCategory.id, payload);
       } else {
-        await adminService.createCategory(formData);
-        setActionSuccess(`New Category '${formData.name}' created successfully.`);
+        await adminService.createCategory(payload);
       }
-      setShowModal(false);
-      fetchCategories();
+      setModalOpen(false);
+      await fetchCategories();
     } catch (err) {
-      alert('Operation failed: ' + (err.response?.data?.message || err.message));
+      alert(err.message || 'Failed to save category');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete category '${name}' (ID #${id})?`)) return;
+  const handleToggleDeactivate = async (id) => {
     try {
-      setActionSuccess(null);
-      await adminService.deleteCategory(id);
-      setActionSuccess(`Category '${name}' deleted successfully.`);
-      fetchCategories();
+      await adminService.deactivateCategory(id);
+      await fetchCategories();
     } catch (err) {
-      alert('Delete failed: ' + (err.response?.data?.message || err.message));
+      alert(err.message || 'Failed to toggle category status');
     }
   };
 
   return (
-    <div className="admin-categories-page">
+    <div>
       <DashboardHeader
-        title="Category Catalog Management"
-        subtitle="Manage global service categories, icons, and status."
+        title="Category Management"
+        subtitle="Configure primary trade specialties and service taxonomies."
+        actions={
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={handleOpenAddModal}
+          >
+            <Plus size={14} />
+            <span>Add Category</span>
+          </button>
+        }
       />
 
       <div className="dashboard-content">
-        <div className="container" style={{ maxWidth: '1200px' }}>
-          {actionSuccess && (
-            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
-              <CheckCircle2 size={18} />
-              <span>{actionSuccess}</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
-              <AlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Action Bar */}
-          <div className="card p-3 mb-4 flex items-center justify-between">
-            <h4 style={{ margin: 0, fontWeight: 700 }}>Service Categories Catalog</h4>
-            <button className="btn btn-primary flex items-center gap-1" onClick={handleOpenCreate}>
-              <Plus size={16} />
-              <span>Add New Category</span>
-            </button>
-          </div>
-
-          {/* Categories Table */}
-          <div className="card p-0 overflow-hidden">
-            {loading ? (
-              <div className="p-5 text-center">
-                <div className="spinner-border text-primary mb-2" role="status" />
-                <p className="text-muted">Loading categories from backend...</p>
-              </div>
-            ) : categories.length === 0 ? (
-              <div className="p-5 text-center text-muted">No categories available in database.</div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-hover mb-0" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead style={{ backgroundColor: 'var(--neutral-100)', borderBottom: '1px solid var(--neutral-200)' }}>
-                    <tr>
-                      <th style={{ padding: '0.75rem 1rem' }}>ID</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Icon</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Name</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Description</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map((c) => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>#{c.id}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
+        
+        {loading ? (
+          <LoadingSpinner message="Loading categories..." />
+        ) : categories.length === 0 ? (
+          <EmptyState
+            icon={Layers}
+            title="No categories configured"
+            description="Create your first home service category."
+            action={
+              <Button variant="primary" onClick={handleOpenAddModal}>
+                <Plus size={14} />
+                <span>Add Category</span>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Icon</th>
+                    <th>Category Name</th>
+                    <th>Sanitized Description</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((c) => {
+                    const Icon = getCategoryIcon(c.name);
+                    return (
+                      <tr key={c.id}>
+                        <td style={{ width: '48px' }}>
                           <div
                             style={{
-                              width: '32px',
-                              height: '32px',
+                              width: '36px',
+                              height: '36px',
                               borderRadius: 'var(--radius-sm)',
-                              backgroundColor: 'var(--primary-50)',
+                              backgroundColor: 'var(--primary-100)',
                               color: 'var(--primary-800)',
-                              display: 'inline-flex',
+                              display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                             }}
                           >
-                            <CategoryIcon categoryName={c.name} slug={c.slug} size={18} />
+                            <Icon size={18} strokeWidth={2.2} />
                           </div>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{sanitizeCategoryName(c.name)}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--neutral-600)' }}>
-                          {sanitizeCategoryDescription(c.description) || 'Professional home service category'}
+                        <td>
+                          <strong className="text-sm block" style={{ color: 'var(--neutral-900)' }}>
+                            {sanitizeCategoryName(c.name)}
+                          </strong>
+                          <span className="text-2xs text-muted font-mono">ID: {c.id}</span>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              backgroundColor: c.active !== false ? '#dcfce7' : '#fee2e2',
-                              color: c.active !== false ? '#166534' : '#991b1b',
-                            }}
-                          >
-                            {c.active !== false ? 'ACTIVE' : 'INACTIVE'}
+                        <td>
+                          <span className="text-xs text-muted">
+                            {sanitizeCategoryDescription(c.name, c.description)}
                           </span>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                          <div className="flex items-center justify-end gap-2">
-                            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={() => handleOpenEdit(c)}>
-                              <Edit2 size={12} />
-                              <span>Edit</span>
+                        <td>
+                          <span className={`badge ${c.active !== false ? 'badge-verified' : 'badge-cancelled'}`} style={{ fontSize: '10px' }}>
+                            {c.active !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-secondary"
+                              style={{ padding: '4px 8px' }}
+                              onClick={() => handleOpenEditModal(c)}
+                              title="Edit Category"
+                            >
+                              <Edit2 size={13} />
                             </button>
-                            <button className="btn btn-sm btn-secondary flex items-center gap-1" style={{ color: 'var(--danger-600)' }} onClick={() => handleDelete(c.id, c.name)}>
-                              <Trash2 size={12} />
-                              <span>Delete</span>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              style={{ padding: '4px 8px' }}
+                              onClick={() => handleToggleDeactivate(c.id)}
+                              title="Toggle Deactivate"
+                            >
+                              <Power size={13} />
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Form Modal / Overlay */}
-          {showModal && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
-              }}
-            >
-              <div className="card p-4" style={{ width: '100%', maxWidth: '500px', backgroundColor: '#fff' }}>
-                <h4 style={{ fontWeight: 700, marginBottom: '1rem' }}>
-                  {editId ? `Edit Category #${editId}` : 'Create New Category'}
-                </h4>
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Category Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Description</label>
-                    <textarea
-                      className="form-control"
-                      rows="3"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group mb-4 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="activeCheck"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    />
-                    <label htmlFor="activeCheck" className="form-label font-bold text-sm mb-0">
-                      Active Category
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      {editId ? 'Save Changes' : 'Create Category'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Add / Edit Category Modal */}
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title={editingCategory ? 'Edit Service Category' : 'Create New Category'}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" loading={saving} onClick={handleSaveCategory}>
+                {editingCategory ? 'Save Changes' : 'Create Category'}
+              </Button>
+            </>
+          }
+        >
+          <form onSubmit={handleSaveCategory}>
+            <Input
+              label="Category Name"
+              placeholder="e.g. Electrical, Plumbing, Cleaning..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+
+            <div className="form-group mb-0">
+              <label className="form-label">Description</label>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder="Brief summary of tasks covered under this category..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </form>
+        </Modal>
+
       </div>
     </div>
   );

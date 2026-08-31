@@ -1,168 +1,231 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { bookingService } from '../../services/bookingService';
-import { providerService } from '../../services/providerService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { BookingCard } from '../../components/booking/BookingCard';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { Button } from '../../components/common/Button';
 import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
-import { Inbox, AlertCircle, Check, X } from 'lucide-react';
+import { formatCurrency, formatDate } from '../../utils/formatters';
+import {
+  Inbox,
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  User,
+  AlertCircle
+} from 'lucide-react';
 
 export const BookingRequestsPage = () => {
-  const { user, providerProfile, updateProvider } = useAuth();
-  const [bookings, setBookings] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const { providerProfile } = useAuth();
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  const fetchBookings = async () => {
+  const fetchRequests = async () => {
+    if (!providerProfile?.id) return;
     setLoading(true);
     try {
-      let activeProfile = providerProfile;
-      if (!activeProfile && user?.id) {
-        activeProfile = await providerService.getProviderByUserId(user.id);
-        updateProvider(activeProfile);
-      }
-
-      if (activeProfile?.id) {
-        const data = await bookingService.getProviderBookings(activeProfile.id, statusFilter);
-        setBookings(data);
-      } else {
-        setBookings([]);
-      }
+      const data = await bookingService.getProviderBookings(providerProfile.id);
+      setRequests(data);
     } catch (err) {
-      console.error('Failed to fetch provider bookings:', err);
-      setBookings([]);
+      console.error('Failed to load requests:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
-  }, [user, providerProfile?.id, statusFilter]);
+    fetchRequests();
+  }, [providerProfile?.id]);
 
-  const handleAccept = async (id) => {
-    if (processingId) return;
+  const handleUpdateStatus = async (id, status) => {
+    setActionLoadingId(id);
     try {
-      setProcessingId(id);
-      await bookingService.updateBookingStatus(id, 'CONFIRMED');
-      await fetchBookings();
+      await bookingService.updateBookingStatus(id, status);
+      await fetchRequests();
     } catch (err) {
-      console.error('Error confirming booking:', err);
-      alert('Failed to accept booking: ' + (err.response?.data?.message || err.message));
+      alert(err.message || `Failed to update status to ${status}`);
     } finally {
-      setProcessingId(null);
+      setActionLoadingId(null);
     }
   };
 
-  const handleReject = async (id) => {
-    if (processingId) return;
-    try {
-      setProcessingId(id);
-      await bookingService.updateBookingStatus(id, 'CANCELLED');
-      await fetchBookings();
-    } catch (err) {
-      console.error('Error cancelling booking:', err);
-      alert('Failed to decline booking: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const tabs = [
-    { key: 'ALL', label: 'All Jobs' },
-    { key: 'PENDING', label: 'Pending Requests' },
-    { key: 'CONFIRMED', label: 'Confirmed / Scheduled' },
-    { key: 'IN_PROGRESS', label: 'In Progress' },
-    { key: 'COMPLETED', label: 'Completed' },
-  ];
+  const pendingRequests = requests.filter(r => r.status === 'PENDING');
+  const otherRequests = requests.filter(r => r.status !== 'PENDING');
 
   return (
-    <div className="booking-requests-page">
+    <div>
       <DashboardHeader
-        title="Booking Requests & Jobs"
-        subtitle="Manage customer appointment dispatches, scheduling, and job completion lifecycles."
+        title="Booking Requests"
+        subtitle="Review new incoming service dispatches and appointment requests."
       />
 
       <div className="dashboard-content">
-        {/* Filter Tabs */}
-        <div className="card mb-6" style={{ padding: '0.5rem' }}>
-          <div className="flex items-center gap-2 flex-wrap">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                className={`btn btn-sm ${statusFilter === t.key ? 'btn-primary' : 'btn-light'}`}
-                onClick={() => setStatusFilter(t.key)}
-              >
-                {t.label}
-              </button>
-            ))}
+        
+        {/* Pending Requests Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h4 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--neutral-900)' }}>
+              Action Required ({pendingRequests.length})
+            </h4>
+            <span className="text-xs text-muted font-medium">Accept to add to your daily visit schedule</span>
           </div>
-        </div>
 
-        {loading ? (
-          <LoadingSpinner message="Fetching job appointments..." />
-        ) : bookings.length === 0 ? (
-          <EmptyState
-            icon={Inbox}
-            title="No job bookings in this category"
-            description="Incoming service appointments will appear here."
-          />
-        ) : (
-          <div className="flex flex-col gap-4">
-            {bookings.map((b) => (
-              <div key={b.id} className="relative">
-                <BookingCard booking={b} role="PROVIDER" />
+          {loading ? (
+            <LoadingSpinner message="Loading incoming booking requests..." />
+          ) : pendingRequests.length === 0 ? (
+            <EmptyState
+              icon={Inbox}
+              title="No pending requests right now"
+              description="Keep your status toggled to ONLINE to receive incoming service dispatches from nearby homeowners."
+            />
+          ) : (
+            <div className="flex flex-col gap-4">
+              {pendingRequests.map((r) => (
+                <div
+                  key={r.id}
+                  className="card"
+                  style={{
+                    padding: '1.5rem',
+                    backgroundColor: 'var(--white)',
+                    border: '2px solid var(--primary-200)',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <div className="flex items-start justify-between flex-wrap gap-4 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="badge badge-pending">New Dispatch</span>
+                        <span className="text-2xs font-mono text-muted">REF: {r.bookingReference}</span>
+                      </div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--neutral-900)' }}>
+                        {r.serviceName}
+                      </h3>
+                      <p className="text-xs text-muted">
+                        Customer: <strong style={{ color: 'var(--neutral-800)' }}>{r.customerName}</strong>
+                      </p>
+                    </div>
 
-                {b.status === 'PENDING' && (
-                  <div
-                    style={{
-                      marginTop: '-12px',
-                      marginBottom: '16px',
-                      padding: '10px 16px',
-                      backgroundColor: 'var(--warning-50)',
-                      border: '1px solid var(--warning-100)',
-                      borderRadius: '0 0 var(--radius-md) var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                    }}
-                  >
-                    <span className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--warning-700)' }}>
-                      <AlertCircle size={14} />
-                      Action Needed: Customer is awaiting your confirmation for {b.date} at {b.time}.
-                    </span>
-
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-success flex items-center gap-1"
-                        disabled={processingId === b.id}
-                        onClick={() => handleAccept(b.id)}
-                      >
-                        <Check size={14} />
-                        <span>{processingId === b.id ? 'Processing...' : 'Accept & Confirm'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-secondary flex items-center gap-1"
-                        style={{ color: 'var(--danger-600)' }}
-                        disabled={processingId === b.id}
-                        onClick={() => handleReject(b.id)}
-                      >
-                        <X size={14} />
-                        <span>Decline</span>
-                      </button>
+                    <div className="text-right">
+                      <span className="text-2xs text-muted uppercase font-bold block">Estimated Payout</span>
+                      <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                        {formatCurrency(r.price || 499)}
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '10px',
+                      backgroundColor: 'var(--neutral-50)',
+                      padding: '0.875rem 1rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--neutral-200)',
+                      marginBottom: '1rem',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Calendar size={15} color="var(--primary-700)" />
+                      <span><strong>Date:</strong> {formatDate(r.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock size={15} color="var(--primary-700)" />
+                      <span><strong>Slot:</strong> {r.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={15} color="var(--primary-700)" />
+                      <span className="text-truncate"><strong>Area:</strong> {r.address?.flat ? `${r.address.flat}, ${r.address.city}` : (r.address?.city || 'Mumbai')}</span>
+                    </div>
+                  </div>
+
+                  {r.notes && (
+                    <div className="mb-3 text-xs text-muted">
+                      <strong>Customer Notes:</strong> "{r.notes}"
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-top" style={{ borderTop: '1px solid var(--neutral-200)' }}>
+                    <Link to={`/provider/bookings/${r.id}`} className="text-xs font-semibold" style={{ color: 'var(--primary-700)' }}>
+                      View Complete Job Card & Map
+                    </Link>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={actionLoadingId === r.id}
+                        onClick={() => handleUpdateStatus(r.id, 'CANCELLED')}
+                      >
+                        <XCircle size={13} />
+                        <span>Decline</span>
+                      </Button>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        loading={actionLoadingId === r.id}
+                        onClick={() => handleUpdateStatus(r.id, 'CONFIRMED')}
+                      >
+                        <CheckCircle2 size={13} />
+                        <span>Accept Request</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Previous Handled Requests */}
+        {otherRequests.length > 0 && (
+          <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>
+              Handled Requests History
+            </h4>
+
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Service & Ref</th>
+                    <th>Customer</th>
+                    <th>Scheduled Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th className="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {otherRequests.slice(0, 10).map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <strong className="text-sm block">{r.serviceName}</strong>
+                        <span className="text-2xs text-muted font-mono">{r.bookingReference}</span>
+                      </td>
+                      <td>{r.customerName}</td>
+                      <td>{formatDate(r.date)} ({r.time})</td>
+                      <td><strong>{formatCurrency(r.price || 499)}</strong></td>
+                      <td><StatusBadge status={r.status} /></td>
+                      <td className="text-right">
+                        <Link to={`/provider/bookings/${r.id}`} className="btn btn-sm btn-secondary" style={{ padding: '4px 10px' }}>
+                          Details
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import {
   Layers,
   Globe,
   LogOut,
+  HelpCircle,
 } from 'lucide-react';
 
 export const Sidebar = ({ role = 'CUSTOMER' }) => {
@@ -32,29 +33,29 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
 
   const customerLinks = [
     { to: '/customer/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/customer/browse', label: 'Browse Services', icon: Search },
+    { to: '/customer/browse', label: 'Find Providers', icon: Search },
     { to: '/customer/bookings', label: 'My Bookings', icon: Calendar },
     { to: '/customer/addresses', label: 'Saved Addresses', icon: MapPin },
-    { to: '/customer/profile', label: 'Account Profile', icon: User },
+    { to: '/customer/profile', label: 'Profile Settings', icon: User },
   ];
 
   const providerLinks = [
     { to: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/provider/profile', label: 'Profile & Location', icon: Wrench },
+    { to: '/provider/requests', label: 'Booking Requests', icon: Inbox },
     { to: '/provider/services', label: 'My Services', icon: ClipboardList },
     { to: '/provider/pricing', label: 'Manage Pricing', icon: CreditCard },
-    { to: '/provider/requests', label: 'Booking Requests', icon: Inbox },
-    { to: '/provider/reviews', label: 'Customer Reviews', icon: Star },
     { to: '/provider/availability', label: 'Availability', icon: Clock },
+    { to: '/provider/reviews', label: 'Reviews', icon: Star },
+    { to: '/provider/profile', label: 'Profile & Area', icon: Wrench },
   ];
 
   const adminLinks = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/admin/users', label: 'Users Directory', icon: Users },
+    { to: '/admin/users', label: 'User Directory', icon: Users },
     { to: '/admin/providers', label: 'Provider Verification', icon: ShieldCheck },
-    { to: '/admin/categories', label: 'Category Catalog', icon: Layers },
-    { to: '/admin/services', label: 'Service Catalog', icon: ClipboardList },
-    { to: '/admin/bookings', label: 'Bookings Monitor', icon: Calendar },
+    { to: '/admin/categories', label: 'Categories', icon: Layers },
+    { to: '/admin/services', label: 'Services', icon: ClipboardList },
+    { to: '/admin/bookings', label: 'All Bookings', icon: Calendar },
   ];
 
   const links = role === 'ADMIN' ? adminLinks : role === 'PROVIDER' ? providerLinks : customerLinks;
@@ -66,15 +67,15 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
       <div className="sidebar-brand">
         <Link to="/" className="navbar-brand">
           <div className="brand-icon" style={{ width: '32px', height: '32px' }}>
-            <ShieldCheck size={18} strokeWidth={2.2} />
+            <ShieldCheck size={18} strokeWidth={2.4} />
           </div>
-          <span style={{ fontSize: '1.15rem' }}>TrustFix</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>TrustFix</span>
         </Link>
       </div>
 
       {/* Navigation List */}
       <nav className="sidebar-nav">
-        <div style={{ padding: '0 8px 8px 8px', fontSize: '11px', fontWeight: 700, color: 'var(--neutral-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ padding: '0 8px 8px 8px', fontSize: '10px', fontWeight: 700, color: 'var(--neutral-400)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           {portalLabel}
         </div>
 
@@ -105,7 +106,7 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
       <div className="sidebar-footer">
         <div className="user-mini-profile mb-3">
           <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+            src={user?.avatar || (providerProfile?.avatar) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
             alt={user?.name || 'User'}
             className="user-avatar"
           />
@@ -113,11 +114,11 @@ export const Sidebar = ({ role = 'CUSTOMER' }) => {
             <h6 className="text-truncate font-bold text-sm" style={{ margin: 0 }}>
               {user?.name || 'User'}
             </h6>
-            <div className="flex items-center gap-1">
-              {role === 'PROVIDER' && providerProfile ? (
-                <VerificationBadge status={providerProfile.verificationStatus} size="sm" />
+            <div className="flex items-center gap-1 mt-05">
+              {role === 'PROVIDER' ? (
+                <VerificationBadge status={providerProfile?.verificationStatus || 'PENDING'} size="sm" />
               ) : (
-                <span className="text-xs text-muted">{role === 'ADMIN' ? 'Administrator' : 'Customer'}</span>
+                <span className="text-xs text-muted font-medium">{role === 'ADMIN' ? 'Administrator' : 'Customer'}</span>
               )}
             </div>
           </div>
