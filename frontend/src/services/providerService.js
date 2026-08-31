@@ -291,5 +291,18 @@ export const providerService = {
       console.warn('[providerService] Error fetching featured providers:', error);
       return [];
     }
+  },
+
+  getNearbyProviders: async ({ lat = 19.1136, lng = 72.8697, radiusKm = 25, serviceId } = {}) => {
+    try {
+      let url = `/providers/nearby?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`;
+      if (serviceId) url += `&serviceId=${serviceId}`;
+      const response = await apiClient.get(url);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.warn('[providerService] Error fetching nearby providers:', error);
+      return [];
+    }
   }
 };
+

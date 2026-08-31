@@ -1,240 +1,295 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
-import { Users, ShieldCheck, Layers, Calendar, ArrowRight, AlertCircle, Sparkles, UserCheck, FolderTree, Wrench } from 'lucide-react';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { StatCard } from '../../components/dashboard/StatCard';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { VerificationBadge } from '../../components/common/VerificationBadge';
+import { LoadingSpinner } from '../../components/common/FeedbackStates';
+import { formatCurrency, formatDate } from '../../utils/formatters';
+import {
+  Users,
+  ShieldCheck,
+  ClipboardList,
+  Calendar,
+  Layers,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  TrendingUp,
+  Activity
+} from 'lucide-react';
 
 export const AdminDashboardPage = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    customers: 0,
-    providers: 0,
-    pendingProviders: 0,
-    categories: 0,
-    services: 0,
-    totalBookings: 0,
-    pendingBookings: 0,
+  const [metrics, setMetrics] = useState({
+    usersCount: 0,
+    pendingProvidersCount: 0,
+    servicesCount: 0,
+    bookingsCount: 0,
   });
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [pendingProviders, setPendingProviders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    const fetchAdminMetrics = async () => {
+      setLoading(true);
+      try {
+        const [users, provProfiles, servs, books] = await Promise.all([
+          adminService.getAllUsers().catch(() => []),
+          adminService.getAllProviderProfiles().catch(() => []),
+          adminService.getServices().catch(() => []),
+          adminService.getAllBookings().catch(() => [])
+        ]);
+
+        const pendingProv = provProfiles.filter(p => p.verificationStatus === 'PENDING');
+
+        setMetrics({
+          usersCount: users.length,
+          pendingProvidersCount: pendingProv.length,
+          servicesCount: servs.length,
+          bookingsCount: books.length,
+        });
+
+        setRecentBookings(books.slice(0, 5));
+        setPendingProviders(pendingProv.slice(0, 4));
+      } catch (err) {
+        console.error('Failed to load admin metrics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminMetrics();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [users, providerProfiles, categories, services, bookings] = await Promise.all([
-        adminService.getAllUsers().catch(() => []),
-        adminService.getAllProviderProfiles().catch(() => []),
-        adminService.getCategories().catch(() => []),
-        adminService.getServices().catch(() => []),
-        adminService.getAllBookings().catch(() => []),
-      ]);
-
-      const customersCount = users.filter((u) => u.role === 'CUSTOMER').length;
-      const providersCount = users.filter((u) => u.role === 'PROVIDER').length;
-      const pendingProv = providerProfiles.filter((p) => p.verificationStatus === 'PENDING').length;
-      const pendingBook = bookings.filter((b) => b.status === 'PENDING').length;
-
-      setStats({
-        totalUsers: users.length,
-        customers: customersCount,
-        providers: providersCount,
-        pendingProviders: pendingProv,
-        categories: categories.length,
-        services: services.length,
-        totalBookings: bookings.length,
-        pendingBookings: pendingBook,
-      });
-    } catch (err) {
-      console.error('Failed to load admin dashboard:', err);
-      setError('Unable to fetch live database metrics. Please check network/backend status.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div>
+        <DashboardHeader title="Admin Dashboard" subtitle="Loading platform data..." />
+        <div className="dashboard-content">
+          <LoadingSpinner message="Fetching platform metrics..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dashboard">
+    <div>
       <DashboardHeader
-        title="Admin Governance Center"
-        subtitle="Live platform oversight, provider background verification queue, category taxonomy, and booking logs."
+        title="Platform Governance & Operations"
+        subtitle="Live platform metrics, provider verifications, and marketplace monitoring."
       />
 
       <div className="dashboard-content">
-        <div className="container" style={{ maxWidth: '1200px' }}>
-          {error && (
-            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
-              <AlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="card text-center p-5">
-              <div className="spinner-border text-primary mx-auto mb-3" role="status" />
-              <p className="text-muted">Loading live database metrics from Spring Boot REST API...</p>
-            </div>
-          ) : (
-            <>
-              {/* Stat Cards Grid */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '1.25rem',
-                  marginBottom: '2rem',
-                }}
-              >
-                <div className="card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted font-bold text-xs uppercase">Total Users</span>
-                    <div style={{ color: 'var(--primary-700)' }}>
-                      <Users size={22} />
-                    </div>
-                  </div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>{stats.totalUsers}</h2>
-                  <div className="text-xs text-muted mt-2">
-                    {stats.customers} Customers • {stats.providers} Providers
-                  </div>
-                </div>
-
-                <div className="card p-4" style={{ borderColor: stats.pendingProviders > 0 ? '#f59e0b' : 'var(--neutral-200)' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted font-bold text-xs uppercase">Pending Providers</span>
-                    <div style={{ color: stats.pendingProviders > 0 ? '#d97706' : 'var(--primary-700)' }}>
-                      <ShieldCheck size={22} />
-                    </div>
-                  </div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: stats.pendingProviders > 0 ? '#d97706' : 'inherit' }}>
-                    {stats.pendingProviders}
-                  </h2>
-                  <div className="text-xs text-muted mt-2">Awaiting Admin Verification</div>
-                </div>
-
-                <div className="card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted font-bold text-xs uppercase">Catalog Taxonomy</span>
-                    <div style={{ color: 'var(--primary-700)' }}>
-                      <FolderTree size={22} />
-                    </div>
-                  </div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>{stats.services}</h2>
-                  <div className="text-xs text-muted mt-2">{stats.categories} Categories Active</div>
-                </div>
-
-                <div className="card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted font-bold text-xs uppercase">Platform Bookings</span>
-                    <div style={{ color: 'var(--primary-700)' }}>
-                      <Calendar size={22} />
-                    </div>
-                  </div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>{stats.totalBookings}</h2>
-                  <div className="text-xs text-muted mt-2">{stats.pendingBookings} Pending Acceptance</div>
-                </div>
-              </div>
-
-              {/* Quick Actions & Navigation */}
-              <div className="card p-4 mb-4">
-                <h4 style={{ fontWeight: 700, marginBottom: '1.25rem' }}>Admin Control Center</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-                  <Link to="/admin/providers" className="card card-hoverable p-3 flex items-center gap-3" style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)',
-                        color: 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <ShieldCheck size={22} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">Provider Verification</div>
-                      <div className="text-xs text-muted">Review credentials & toggle verified status</div>
-                    </div>
-                  </Link>
-
-                  <Link to="/admin/users" className="card card-hoverable p-3 flex items-center gap-3" style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)',
-                        color: 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Users size={22} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">User Administration</div>
-                      <div className="text-xs text-muted">Manage customer and provider accounts</div>
-                    </div>
-                  </Link>
-
-                  <Link to="/admin/categories" className="card card-hoverable p-3 flex items-center gap-3" style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)',
-                        color: 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <FolderTree size={22} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">Category Catalog</div>
-                      <div className="text-xs text-muted">Manage service categories and icons</div>
-                    </div>
-                  </Link>
-
-                  <Link to="/admin/services" className="card card-hoverable p-3 flex items-center gap-3" style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)',
-                        color: 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Wrench size={22} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">Services Catalog</div>
-                      <div className="text-xs text-muted">Create services, set base pricing & duration</div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            </>
-          )}
+        
+        {/* TOP METRICS ROW */}
+        <div className="grid grid-cols-1 mb-8" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+          <StatCard
+            title="Total Registered Users"
+            value={metrics.usersCount}
+            subtitle="Customers & Specialists"
+            icon={<Users size={20} />}
+            color="primary"
+          />
+          <StatCard
+            title="Pending Verifications"
+            value={metrics.pendingProvidersCount}
+            subtitle="Requires document review"
+            icon={<ShieldCheck size={20} />}
+            color={metrics.pendingProvidersCount > 0 ? "warning" : "success"}
+          />
+          <StatCard
+            title="Active Services"
+            value={metrics.servicesCount}
+            subtitle="Across all categories"
+            icon={<ClipboardList size={20} />}
+            color="info"
+          />
+          <StatCard
+            title="Total Bookings"
+            value={metrics.bookingsCount}
+            subtitle="Platform transaction volume"
+            icon={<Calendar size={20} />}
+            color="success"
+          />
         </div>
+
+        {/* 2-COLUMN SECTION: PENDING PROVIDERS + RECENT ORDERS */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '2rem',
+          }}
+        >
+          {/* Pending Verifications */}
+          <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+              <div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Pending Provider Approvals</h4>
+                <span className="text-xs text-muted">Review credentials and activate profiles</span>
+              </div>
+              <Link to="/admin/providers" className="btn btn-sm btn-secondary">
+                <span>View All</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            {pendingProviders.length === 0 ? (
+              <div className="text-center py-6">
+                <CheckCircle2 size={32} color="var(--success-600)" style={{ margin: '0 auto 8px auto' }} />
+                <p className="text-xs text-muted">All provider applications have been reviewed!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {pendingProviders.map((p, idx) => (
+                  <div
+                    key={p.id || idx}
+                    style={{
+                      padding: '0.875rem 1rem',
+                      backgroundColor: 'var(--neutral-50)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--neutral-200)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                    }}
+                  >
+                    <div>
+                      <strong className="text-sm block" style={{ color: 'var(--neutral-900)' }}>
+                        {p.businessName || p.userName || 'Specialist Application'}
+                      </strong>
+                      <span className="text-xs text-muted">{p.userEmail || p.userPhone || 'No contact email'}</span>
+                    </div>
+
+                    <Link to="/admin/providers" className="btn btn-sm btn-primary text-xs" style={{ padding: '4px 10px' }}>
+                      Review
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Platform Bookings */}
+          <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-bottom" style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+              <div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Recent Orders Monitor</h4>
+                <span className="text-xs text-muted">Live customer booking requests</span>
+              </div>
+              <Link to="/admin/bookings" className="btn btn-sm btn-secondary">
+                <span>All Orders</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            {recentBookings.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-xs text-muted">No bookings recorded on platform yet.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {recentBookings.map((b) => (
+                  <div
+                    key={b.id}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      backgroundColor: 'var(--neutral-50)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--neutral-200)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <strong className="text-xs block">{b.serviceName}</strong>
+                      <span className="text-2xs text-muted font-mono">{b.bookingReference} • {formatDate(b.date)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={b.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Admin Navigation Grid */}
+        <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+          <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>
+            Governance Shortcuts
+          </h4>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <Link
+              to="/admin/users"
+              className="card card-hoverable"
+              style={{
+                padding: '1.25rem',
+                textDecoration: 'none',
+                backgroundColor: 'var(--neutral-50)',
+                border: '1px solid var(--neutral-200)',
+              }}
+            >
+              <Users size={20} color="var(--primary-700)" className="mb-2" />
+              <strong className="text-sm block text-neutral-900">User Management</strong>
+              <span className="text-2xs text-muted">View all platform roles & accounts</span>
+            </Link>
+
+            <Link
+              to="/admin/providers"
+              className="card card-hoverable"
+              style={{
+                padding: '1.25rem',
+                textDecoration: 'none',
+                backgroundColor: 'var(--neutral-50)',
+                border: '1px solid var(--neutral-200)',
+              }}
+            >
+              <ShieldCheck size={20} color="var(--success-700)" className="mb-2" />
+              <strong className="text-sm block text-neutral-900">Provider Verification</strong>
+              <span className="text-2xs text-muted">Approve & verify specialist credentials</span>
+            </Link>
+
+            <Link
+              to="/admin/categories"
+              className="card card-hoverable"
+              style={{
+                padding: '1.25rem',
+                textDecoration: 'none',
+                backgroundColor: 'var(--neutral-50)',
+                border: '1px solid var(--neutral-200)',
+              }}
+            >
+              <Layers size={20} color="var(--info-700)" className="mb-2" />
+              <strong className="text-sm block text-neutral-900">Category Catalog</strong>
+              <span className="text-2xs text-muted">Configure trades & icons</span>
+            </Link>
+
+            <Link
+              to="/admin/services"
+              className="card card-hoverable"
+              style={{
+                padding: '1.25rem',
+                textDecoration: 'none',
+                backgroundColor: 'var(--neutral-50)',
+                border: '1px solid var(--neutral-200)',
+              }}
+            >
+              <ClipboardList size={20} color="var(--warning-700)" className="mb-2" />
+              <strong className="text-sm block text-neutral-900">Service Catalog</strong>
+              <span className="text-2xs text-muted">Manage standard offerings & base pricing</span>
+            </Link>
+          </div>
+        </div>
+
       </div>
     </div>
   );

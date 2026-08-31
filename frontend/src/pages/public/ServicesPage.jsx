@@ -1,43 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-
+import { useParams, useSearchParams } from 'react-router-dom';
 import { categoryService } from '../../services/categoryService';
 import { ServiceCard } from '../../components/service/ServiceCard';
-import {
-  SearchBar,
-  LoadingSpinner,
-  EmptyState
-} from '../../components/common/FeedbackStates';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
 import { CategoryIcon } from '../../utils/categoryIcons';
-import { Layers, Search, AlertCircle } from 'lucide-react';
+import { Layers, Search, AlertCircle, RotateCcw } from 'lucide-react';
 
 export const ServicesPage = () => {
   const { categorySlug } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryCategory = searchParams.get('category');
 
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
-
-  // Category state uses selectedCategoryId ('all' or numeric ID)
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
-
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // =====================================================
-  // Fetch Categories & Resolve category param if passed
-  // =====================================================
+  // Fetch Categories
   useEffect(() => {
     const initCategories = async () => {
       try {
         const cats = await categoryService.getCategories();
         setCategories(cats);
 
-        if (categorySlug) {
+        const target = categorySlug || queryCategory;
+        if (target) {
           const matched = cats.find(
-            c => String(c.id) === String(categorySlug) ||
-                 c.name.toLowerCase() === categorySlug.toLowerCase() ||
-                 c.name.toLowerCase().replace(/\s+/g, '-') === categorySlug.toLowerCase()
+            c => String(c.id) === String(target) ||
+                 c.slug === target.toLowerCase() ||
+                 c.name.toLowerCase() === target.toLowerCase() ||
+                 c.name.toLowerCase().replace(/\s+/g, '-') === target.toLowerCase()
           );
           if (matched) {
             setSelectedCategoryId(matched.id);
@@ -51,11 +45,9 @@ export const ServicesPage = () => {
     };
 
     initCategories();
-  }, [categorySlug]);
+  }, [categorySlug, queryCategory]);
 
-  // =====================================================
-  // Fetch Services from backend based on selectedCategoryId
-  // =====================================================
+  // Fetch Services from backend based on selectedCategoryId and search
   useEffect(() => {
     const fetchServices = async () => {
       setLoading(true);
@@ -85,49 +77,56 @@ export const ServicesPage = () => {
     fetchServices();
   }, [selectedCategoryId, search]);
 
-  // =====================================================
-  // Category Selection Handler
-  // =====================================================
   const handleCategoryChange = (categoryId) => {
     setSelectedCategoryId(categoryId);
+    if (categoryId === 'all') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category: categoryId });
+    }
   };
 
-  // =====================================================
-  // Clear Filters
-  // =====================================================
   const clearFilters = () => {
     setSearch('');
     setSelectedCategoryId('all');
+    setSearchParams({});
   };
 
   return (
-    <div className="services-page" style={{ padding: '2.5rem 0 4rem 0' }}>
+    <div className="services-page" style={{ padding: '2.5rem 0 4rem 0', minHeight: '80vh' }}>
       <div className="container">
 
-        {/* PAGE HEADER */}
+        {/* Page Header */}
         <div className="mb-8">
-          <span className="section-subtitle">Service Catalog</span>
+          <span className="section-subtitle">Services Catalog</span>
           <h1 className="section-title" style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>
-            Explore Verified Home Services
+            Find the Right Professional for Every Home Need
           </h1>
           <p className="section-desc">
-            Browse guaranteed home repair solutions with background-checked specialists and transparent rates.
+            Explore verified doorstep solutions with background-checked specialists, transparent pricing, and ₹0 advance payment.
           </p>
         </div>
 
-        {/* SEARCH & CATEGORY FILTER */}
-        <div className="card mb-8" style={{ padding: '1.25rem' }}>
+        {/* Search & Category Filter Pills */}
+        <div className="card mb-8" style={{ padding: '1.25rem', backgroundColor: 'var(--white)' }}>
           <div className="flex flex-col gap-4">
-            {/* Search */}
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Search services (e.g. Electrical inspection, leak fix, deep cleaning)..."
-            />
+            
+            {/* Search Box */}
+            <div className="search-box">
+              <span className="search-icon">
+                <Search size={18} strokeWidth={2} aria-hidden="true" />
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search services (e.g. Electrical inspection, leak fix, AC jet service, deep cleaning)..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
 
-            {/* Category Buttons */}
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* All Services */}
               <button
                 type="button"
                 className={`btn btn-sm ${
@@ -141,7 +140,6 @@ export const ServicesPage = () => {
                 <span>All Services</span>
               </button>
 
-              {/* Categories */}
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -161,7 +159,7 @@ export const ServicesPage = () => {
           </div>
         </div>
 
-        {/* ERROR MESSAGE */}
+        {/* Error State */}
         {error && !loading && (
           <EmptyState
             icon={AlertCircle}
@@ -169,37 +167,47 @@ export const ServicesPage = () => {
             description={error}
             action={
               <button className="btn btn-secondary" onClick={clearFilters}>
-                Clear Filters
+                <RotateCcw size={14} />
+                <span>Clear Filters</span>
               </button>
             }
           />
         )}
 
-        {/* LOADING */}
+        {/* Loading Spinner */}
         {loading && (
-          <LoadingSpinner message="Fetching verified services..." />
+          <LoadingSpinner message="Loading verified services..." />
         )}
 
-        {/* NO SERVICES */}
+        {/* Empty State */}
         {!loading && !error && services.length === 0 && (
           <EmptyState
             icon={Search}
             title="No services found"
-            description="Try searching with different keywords or select a different category."
+            description="Try searching with different keywords or select another category above."
             action={
               <button className="btn btn-secondary" onClick={clearFilters}>
-                Clear Filters
+                <RotateCcw size={14} />
+                <span>Clear Filters</span>
               </button>
             }
           />
         )}
 
-        {/* SERVICES GRID */}
+        {/* Services Grid */}
         {!loading && !error && services.length > 0 && (
-          <div className="services-grid">
-            {services.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs text-muted font-semibold">
+                Showing <strong>{services.length}</strong> verified services
+              </span>
+            </div>
+
+            <div className="services-grid">
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
           </div>
         )}
 

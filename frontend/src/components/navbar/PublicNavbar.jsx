@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, Menu, X, User, LogOut, Check } from 'lucide-react';
+import { ShieldCheck, Menu, X, User, LogOut, Check, Search, ArrowRight } from 'lucide-react';
 
 export const PublicNavbar = () => {
   const { user, isAuthenticated, role, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -19,18 +22,37 @@ export const PublicNavbar = () => {
     return '/customer/dashboard';
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchVal.trim()) {
+      navigate(`/browse?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchOpen(false);
+      setSearchVal('');
+    }
+  };
+
+  const handleHowItWorksClick = (e) => {
+    if (location.pathname === '/') {
+      e.preventDefault();
+      const el = document.getElementById('how-it-works');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <header className="navbar">
       <div className="container nav-container">
-        {/* Brand Logo */}
+        {/* Brand Logo with Shield */}
         <Link to="/" className="navbar-brand">
           <div className="brand-icon">
-            <ShieldCheck size={20} strokeWidth={2.2} />
+            <ShieldCheck size={20} strokeWidth={2.4} />
           </div>
           <span>TrustFix</span>
           <span className="brand-badge">
             <Check size={10} strokeWidth={3} />
-            Verified
+            Verified Pros
           </span>
         </Link>
 
@@ -52,11 +74,50 @@ export const PublicNavbar = () => {
                 Find Providers
               </NavLink>
             </li>
+            <li>
+              <a href="/#how-it-works" onClick={handleHowItWorksClick} className="nav-link">
+                How It Works
+              </a>
+            </li>
           </ul>
         </nav>
 
-        {/* Right CTA / User Status */}
+        {/* Right CTA / Search / Auth */}
         <div className="nav-actions">
+          {/* Quick Search Trigger */}
+          {searchOpen ? (
+            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="text"
+                className="form-control"
+                style={{ height: '34px', fontSize: '13px', width: '170px', padding: '4px 8px' }}
+                placeholder="Search service..."
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                style={{ padding: '4px 8px' }}
+                onClick={() => setSearchOpen(false)}
+              >
+                <X size={14} />
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              style={{ padding: '6px 10px' }}
+              onClick={() => setSearchOpen(true)}
+              title="Search services and providers"
+              aria-label="Search"
+            >
+              <Search size={14} />
+            </button>
+          )}
+
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <Link to={getDashboardPath()} className="btn btn-sm btn-primary">
@@ -74,7 +135,8 @@ export const PublicNavbar = () => {
                 Login
               </Link>
               <Link to="/register" className="btn btn-sm btn-primary">
-                Register
+                <span>Get Started</span>
+                <ArrowRight size={13} />
               </Link>
             </div>
           )}
@@ -116,8 +178,18 @@ export const PublicNavbar = () => {
           >
             Find Providers
           </NavLink>
+          <a
+            href="/#how-it-works"
+            className="nav-link font-semibold text-lg"
+            onClick={(e) => {
+              setMobileMenuOpen(false);
+              handleHowItWorksClick(e);
+            }}
+          >
+            How It Works
+          </a>
 
-          <div style={{ borderTop: '1px solid var(--neutral-200)', paddingTop: '1rem', marginTop: 'auto' }}>
+          <div style={{ borderTop: '1px solid var(--neutral-200)', paddingTop: '1.25rem', marginTop: 'auto' }}>
             {isAuthenticated ? (
               <div className="flex flex-col gap-2">
                 <Link
@@ -150,7 +222,8 @@ export const PublicNavbar = () => {
                   className="btn btn-primary btn-block"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Create Account
+                  <span>Get Started</span>
+                  <ArrowRight size={14} />
                 </Link>
               </div>
             )}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Bell, User } from 'lucide-react';
 
 export const DashboardHeader = ({ title, subtitle, actions }) => {
   const { user, role, providerProfile } = useAuth();
@@ -12,7 +12,7 @@ export const DashboardHeader = ({ title, subtitle, actions }) => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--neutral-900)', margin: 0 }}>
           {title}
         </h2>
-        {subtitle && <p className="text-xs text-muted" style={{ margin: 0 }}>{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted" style={{ margin: '2px 0 0 0' }}>{subtitle}</p>}
       </div>
 
       <div className="flex items-center gap-3">
@@ -25,6 +25,7 @@ export const DashboardHeader = ({ title, subtitle, actions }) => {
           </Link>
         )}
 
+        {/* User Profile Chip */}
         <div
           style={{
             display: 'flex',
@@ -37,8 +38,8 @@ export const DashboardHeader = ({ title, subtitle, actions }) => {
           }}
         >
           <span className={`status-dot ${role === 'PROVIDER' ? (providerProfile?.available ? 'online' : 'offline') : 'online'}`} />
-          <span className="text-xs font-semibold" style={{ color: 'var(--neutral-700)' }}>
-            {user?.name?.split(' ')[0] || 'User'}
+          <span className="text-xs font-semibold" style={{ color: 'var(--neutral-800)' }}>
+            {user?.name || 'Account'}
           </span>
         </div>
       </div>

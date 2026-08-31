@@ -1,277 +1,319 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
+import { locationService } from '../../services/locationService';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { BookingTimeline } from '../../components/booking/BookingTimeline';
 import { MapView } from '../../components/map/MapView';
+import { Button } from '../../components/common/Button';
 import { LoadingSpinner, ErrorMessage } from '../../components/common/FeedbackStates';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { Calendar, Clock, Check, X, PlayCircle, Phone, Mail, MapPin, CreditCard, ChevronRight } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle2,
+  PlayCircle,
+  XCircle,
+  ArrowLeft,
+  User,
+  Phone,
+  Mail,
+  ShieldCheck,
+  Check
+} from 'lucide-react';
 
 export const ProviderBookingDetailsPage = () => {
   const { bookingId } = useParams();
   const [booking, setBooking] = useState(null);
+  const [customerLocation, setCustomerLocation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fetchBooking = async () => {
+  const fetchDetails = async () => {
     setLoading(true);
     try {
-      const data = await bookingService.getBookingById(bookingId);
-      setBooking(data);
+      const b = await bookingService.getBookingById(bookingId);
+      setBooking(b);
+      const loc = await locationService.getLocationByProviderId(b.providerId || 1);
+      setCustomerLocation(loc);
     } catch (err) {
-      setError(err.message || 'Job not found');
+      setError(err.message || 'Failed to load booking details');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBooking();
+    fetchDetails();
   }, [bookingId]);
 
   const handleUpdateStatus = async (newStatus) => {
     setActionLoading(true);
     try {
-      await bookingService.updateBookingStatus(bookingId, newStatus);
-      fetchBooking();
+      await bookingService.updateBookingStatus(booking.id, newStatus);
+      await fetchDetails();
+    } catch (err) {
+      alert(err.message || `Failed to update status to ${newStatus}`);
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (loading) return <LoadingSpinner message="Loading job dispatch details..." />;
+  if (loading) {
+    return (
+      <div>
+        <DashboardHeader title="Job Details" subtitle="Loading..." />
+        <div className="dashboard-content">
+          <LoadingSpinner message="Fetching job details..." />
+        </div>
+      </div>
+    );
+  }
+
   if (error || !booking) {
     return (
-      <div className="container section-py">
-        <ErrorMessage message={error || 'Job not found'} onRetry={() => navigate('/provider/requests')} />
+      <div>
+        <DashboardHeader title="Job Details" subtitle="Error" />
+        <div className="dashboard-content">
+          <ErrorMessage message={error || 'Job not found'} onRetry={() => navigate('/provider/dashboard')} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="provider-booking-details-page">
+    <div>
       <DashboardHeader
-        title={`Job Dispatch #${booking.id}`}
-        subtitle="Manage service execution, progress milestones, and customer address coordination."
+        title={`Job #${booking.bookingReference}`}
+        subtitle={`Customer: ${booking.customerName} • ${formatDate(booking.date)} at ${booking.time}`}
+        actions={
+          <Link to="/provider/requests" className="btn btn-sm btn-secondary">
+            <ArrowLeft size={14} />
+            <span>All Requests</span>
+          </Link>
+        }
       />
 
       <div className="dashboard-content">
-        {/* Top Status & Quick Action Header */}
-        <div className="card mb-6" style={{ padding: '1.5rem' }}>
+        
+        {/* Top Status & Milestone Action Banner */}
+        <div className="card mb-6" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'var(--neutral-900)' }}>
                   {booking.serviceName}
-                </h2>
+                </h3>
                 <StatusBadge status={booking.status} />
               </div>
-              <p className="text-xs text-muted flex items-center gap-1 flex-wrap">
-                <span>Customer: <strong>{booking.customerName}</strong> ({booking.customerPhone})</span>
-                <span>•</span>
-                <Calendar size={12} color="var(--primary-700)" />
-                <span><strong>{formatDate(booking.date)} at {booking.time}</strong></span>
-              </p>
+              <span className="text-xs text-muted">
+                Order Placed: {new Date(booking.createdAt).toLocaleString()} • Ref: <strong className="font-mono">{booking.bookingReference}</strong>
+              </span>
             </div>
 
-            {/* Lifecycle Action Buttons */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Lifecycle Milestone Actions */}
+            <div className="flex items-center gap-2">
               {booking.status === 'PENDING' && (
                 <>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-success flex items-center gap-1"
-                    onClick={() => handleUpdateStatus('CONFIRMED')}
-                    disabled={actionLoading}
-                  >
-                    <Check size={14} />
-                    <span>Accept Job</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-secondary flex items-center gap-1"
-                    style={{ color: 'var(--danger-600)' }}
+                  <Button
+                    variant="secondary"
+                    loading={actionLoading}
                     onClick={() => handleUpdateStatus('CANCELLED')}
-                    disabled={actionLoading}
                   >
-                    <X size={14} />
-                    <span>Decline Job</span>
-                  </button>
+                    <XCircle size={14} />
+                    <span>Decline</span>
+                  </Button>
+                  <Button
+                    variant="success"
+                    loading={actionLoading}
+                    onClick={() => handleUpdateStatus('CONFIRMED')}
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>Accept Job</span>
+                  </Button>
                 </>
               )}
 
               {booking.status === 'CONFIRMED' && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary flex items-center gap-1"
+                <Button
+                  variant="primary"
+                  loading={actionLoading}
                   onClick={() => handleUpdateStatus('IN_PROGRESS')}
-                  disabled={actionLoading}
                 >
-                  <PlayCircle size={14} />
-                  <span>Arrived & Start Work</span>
-                </button>
+                  <PlayCircle size={15} />
+                  <span>Start Work (Arrived at Doorstep)</span>
+                </Button>
               )}
 
               {booking.status === 'IN_PROGRESS' && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-success flex items-center gap-1"
+                <Button
+                  variant="success"
+                  loading={actionLoading}
                   onClick={() => handleUpdateStatus('COMPLETED')}
-                  disabled={actionLoading}
                 >
-                  <Check size={14} />
+                  <CheckCircle2 size={15} />
                   <span>Mark Work Completed</span>
-                </button>
+                </Button>
               )}
 
-              <Link to="/provider/requests" className="btn btn-sm btn-secondary">
-                Back to Requests
-              </Link>
+              {booking.status === 'COMPLETED' && (
+                <span className="badge badge-verified" style={{ fontSize: '12px', padding: '6px 12px' }}>
+                  <CheckCircle2 size={14} />
+                  <span>Job Completed & Verified</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         {/* 2-Column Grid */}
-        <div className="grid grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-          
-          {/* Left Column: Customer & Location */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.7fr) minmax(300px, 1.1fr)',
+            gap: '1.5rem',
+            alignItems: 'start',
+          }}
+          className="provider-job-grid"
+        >
+          {/* LEFT: Customer, Location, Issue, Timeline */}
           <div className="flex flex-col gap-6">
             
-            {/* Customer Details */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', borderBottom: '1px solid var(--neutral-200)', paddingBottom: '0.5rem' }}>
-                Customer & Contact
+            {/* Customer & Location Card */}
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--neutral-900)' }}>
+                Customer & Doorstep Details
               </h4>
 
-              <div className="flex flex-col gap-3 text-sm">
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1rem',
+                  backgroundColor: 'var(--neutral-50)',
+                  padding: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--neutral-200)',
+                  marginBottom: '1rem',
+                }}
+              >
                 <div>
-                  <span className="text-muted block text-xs">Customer Name</span>
-                  <strong style={{ color: 'var(--neutral-900)' }}>{booking.customerName}</strong>
+                  <span className="text-2xs text-muted block uppercase font-bold">Customer Name</span>
+                  <strong className="text-sm block">{booking.customerName}</strong>
+                  {booking.customerPhone && (
+                    <span className="text-xs text-muted flex items-center gap-1 mt-05">
+                      <Phone size={12} /> {booking.customerPhone}
+                    </span>
+                  )}
                 </div>
 
                 <div>
-                  <span className="text-muted block text-xs">Direct Phone</span>
-                  <a href={`tel:${booking.customerPhone}`} className="font-bold flex items-center gap-1" style={{ color: 'var(--primary-700)' }}>
-                    <Phone size={13} />
-                    <span>{booking.customerPhone}</span>
-                  </a>
+                  <span className="text-2xs text-muted block uppercase font-bold">Appointment Schedule</span>
+                  <strong className="text-sm block">{formatDate(booking.date)}</strong>
+                  <span className="text-xs text-muted">{booking.time} slot</span>
                 </div>
 
                 <div>
-                  <span className="text-muted block text-xs">Email</span>
-                  <span className="flex items-center gap-1">
-                    <Mail size={13} color="var(--neutral-500)" />
-                    <span>{booking.customerEmail}</span>
-                  </span>
+                  <span className="text-2xs text-muted block uppercase font-bold">Doorstep Address</span>
+                  <strong className="text-sm block text-truncate">{booking.address?.flat ? `${booking.address.flat}, ${booking.address.city}` : (booking.address?.city || 'Mumbai')}</strong>
+                  <span className="text-xs text-muted">{booking.address?.pincode}</span>
                 </div>
+              </div>
 
-                {booking.description && (
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <span className="text-muted block text-xs font-semibold">Problem Reported by Customer:</span>
-                    <p className="text-xs text-muted" style={{ backgroundColor: 'var(--neutral-50)', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', marginTop: '4px' }}>
-                      "{booking.description}"
-                    </p>
+              {booking.notes && (
+                <div>
+                  <span className="text-xs text-muted block font-semibold mb-1">Customer Issue Description:</span>
+                  <p className="text-xs" style={{ color: 'var(--neutral-700)', backgroundColor: 'var(--white)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--neutral-200)', margin: 0 }}>
+                    "{booking.notes}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Job Lifecycle Timeline */}
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--neutral-900)' }}>
+                Job Execution Progress
+              </h4>
+
+              <div className="timeline">
+                {(booking.timeline || [
+                  { step: 'Order Received', time: formatDate(booking.createdAt), done: true, desc: 'Customer placed booking request.' },
+                  { step: 'Provider Accepted', time: booking.status !== 'PENDING' ? 'Accepted' : 'Pending Action', done: booking.status !== 'PENDING' && booking.status !== 'CANCELLED', desc: 'Appointment confirmed on provider schedule.' },
+                  { step: 'In Progress (At Location)', time: booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED' ? 'In Progress' : 'Pending', done: booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED', desc: 'Technician arrived & performing diagnosis.' },
+                  { step: 'Job Completed', time: booking.status === 'COMPLETED' ? 'Completed' : 'Pending', done: booking.status === 'COMPLETED', desc: 'Customer verified and tested repairs.' }
+                ]).map((t, idx) => (
+                  <div key={idx} className={`timeline-item ${t.done ? 'done' : ''}`}>
+                    <div className="timeline-marker">
+                      {t.done ? <Check size={12} strokeWidth={3} /> : idx + 1}
+                    </div>
+                    <div className="timeline-content">
+                      <h5>{t.step}</h5>
+                      <span className="timeline-time">{t.time}</span>
+                      <p>{t.desc}</p>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
-            {/* Customer Location & Map */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                Service Destination
+          </div>
+
+          {/* RIGHT: Payout Breakdown & Map */}
+          <div className="flex flex-col gap-6">
+            
+            {/* Payout Summary */}
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--neutral-900)' }}>
+                Payout & Billing Summary
+              </h4>
+
+              <div className="flex flex-col gap-2.5 mb-4 text-sm">
+                <div className="flex justify-between text-muted">
+                  <span>Gross Job Amount</span>
+                  <span>{formatCurrency(booking.price || 499)}</span>
+                </div>
+                <div className="flex justify-between text-muted">
+                  <span>Platform Service Fee (0% Launch Special)</span>
+                  <span className="text-success font-semibold">₹0.00</span>
+                </div>
+                <div className="flex justify-between pt-3 border-top font-bold" style={{ borderTop: '1px solid var(--neutral-200)', fontSize: '1.15rem' }}>
+                  <span style={{ color: 'var(--neutral-900)' }}>Net Provider Earnings</span>
+                  <span style={{ color: 'var(--success-700)' }}>{formatCurrency(booking.price || 499)}</span>
+                </div>
+              </div>
+
+              <p className="text-2xs text-muted mb-0" style={{ lineHeight: 1.4 }}>
+                • Collect payment directly from customer upon job completion via UPI/Cash/Card.<br />
+                • In case of additional parts or extended labor, agree on quotation before starting work.
+              </p>
+            </div>
+
+            {/* Location Map Preview */}
+            <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--neutral-900)' }}>
+                Customer Location Map
               </h4>
               <p className="text-xs text-muted mb-3 flex items-center gap-1">
                 <MapPin size={13} color="var(--primary-700)" />
-                <span>{booking.address?.flat ? `${booking.address.flat}, ${booking.address.street}, ${booking.address.city} - ${booking.address.pincode}` : 'Mumbai'}</span>
+                <span>{booking.address?.flat ? `${booking.address.flat}, ${booking.address.city}` : (booking.address?.city || 'Mumbai')}</span>
               </p>
 
-              <div style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              <div style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--neutral-200)' }}>
                 <MapView
-                  locations={[{ id: 1, name: 'Customer Destination', latitude: booking.latitude || 19.1294, longitude: booking.longitude || 72.8752, service: booking.categoryName, verified: true }]}
-                  center={{ latitude: booking.latitude || 19.1294, longitude: booking.longitude || 72.8752, city: booking.address?.city || 'Mumbai' }}
-                  customerLocation={{ latitude: booking.latitude || 19.1294, longitude: booking.longitude || 72.8752 }}
+                  locations={customerLocation ? [customerLocation] : []}
+                  selectedProviderId={booking.providerId}
                   height="220px"
-                  showServiceRadius={false}
-                  interactive={false}
+                  showServiceRadius={true}
+                  interactive={true}
                 />
               </div>
             </div>
 
           </div>
-
-          {/* Right Column: Timeline & Payout */}
-          <div className="flex flex-col gap-6">
-            
-            {/* Timeline */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.25rem' }}>
-                Milestone Timeline
-              </h4>
-
-              <BookingTimeline timeline={booking.timeline} currentStatus={booking.status} />
-            </div>
-
-            {/* Payout Summary */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', borderBottom: '1px solid var(--neutral-200)', paddingBottom: '0.5rem' }}>
-                Partner Earnings & Invoice
-              </h4>
-
-              <div className="flex flex-col gap-2 text-sm mb-4">
-                <div className="flex justify-between">
-                  <span className="text-muted">Standard Labor Fee:</span>
-                  <span>{formatCurrency(booking.price)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">GST Collected:</span>
-                  <span>{formatCurrency(booking.tax)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Platform Partner Fee:</span>
-                  <span style={{ color: 'var(--success-700)', fontWeight: 700 }}>0% (Promotional Free)</span>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: '2px dashed var(--neutral-300)',
-                    paddingTop: '0.75rem',
-                    marginTop: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                  }}
-                >
-                  <span className="font-bold">Total Payout on Completion:</span>
-                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success-700)' }}>
-                    {formatCurrency(booking.price)}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: '10px',
-                  backgroundColor: 'var(--neutral-50)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '11px',
-                  color: 'var(--neutral-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <CreditCard size={14} color="var(--primary-700)" />
-                <span>Collect payment directly via UPI or Cash from customer after work completion.</span>
-              </div>
-            </div>
-
-          </div>
-
         </div>
 
       </div>

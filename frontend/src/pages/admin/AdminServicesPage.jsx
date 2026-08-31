@@ -1,357 +1,316 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { adminService } from '../../services/adminService';
-import { sanitizeServiceName, sanitizeServiceDescription } from '../../utils/categoryIcons';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
+import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { LoadingSpinner, EmptyState } from '../../components/common/FeedbackStates';
 import { formatCurrency } from '../../utils/formatters';
-import { Plus, Edit2, Trash2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { ClipboardList, Plus, Edit2, Power, Search } from 'lucide-react';
 
 export const AdminServicesPage = () => {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actionSuccess, setActionSuccess] = useState(null);
 
-  // Form State
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState(null);
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState(null);
   const [formData, setFormData] = useState({
+    categoryId: '',
     name: '',
     description: '',
     basePrice: 499,
-    durationInMinutes: 60,
-    categoryId: '',
-    imageUrl: '',
-    active: true,
+    durationMinutes: 60,
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const [svcData, catData] = await Promise.all([
+      const [servs, cats] = await Promise.all([
         adminService.getServices(),
-        adminService.getCategories(),
+        adminService.getCategories()
       ]);
-      setServices(svcData);
-      setCategories(catData);
-      if (catData.length > 0 && !formData.categoryId) {
-        setFormData((prev) => ({ ...prev, categoryId: catData[0].id }));
+      setServices(servs);
+      setCategories(cats);
+      if (cats.length > 0 && !formData.categoryId) {
+        setFormData(prev => ({ ...prev, categoryId: cats[0].id }));
       }
     } catch (err) {
-      console.error('Failed to load services:', err);
-      setError('Unable to fetch service catalog from backend.');
+      console.error('Failed to load services data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenCreate = () => {
-    setEditId(null);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingService(null);
     setFormData({
+      categoryId: categories[0]?.id || 1,
       name: '',
       description: '',
       basePrice: 499,
-      durationInMinutes: 60,
-      categoryId: categories.length > 0 ? categories[0].id : '',
-      imageUrl: '',
-      active: true,
+      durationMinutes: 60,
     });
-    setShowModal(true);
+    setModalOpen(true);
   };
 
-  const handleOpenEdit = (svc) => {
-    setEditId(svc.id);
+  const handleOpenEditModal = (s) => {
+    setEditingService(s);
     setFormData({
-      name: sanitizeServiceName(svc.name) || '',
-      description: sanitizeServiceDescription(svc.description) || '',
-      basePrice: svc.basePrice || 499,
-      durationInMinutes: svc.durationInMinutes || 60,
-      categoryId: svc.categoryId || (categories.length > 0 ? categories[0].id : ''),
-      imageUrl: svc.imageUrl || '',
-      active: svc.active !== false,
+      categoryId: s.categoryId || categories[0]?.id || 1,
+      name: s.name,
+      description: s.description || '',
+      basePrice: s.basePrice || s.price || 499,
+      durationMinutes: s.durationMinutes || 60,
     });
-    setShowModal(true);
+    setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSaveService = async (e) => {
     e.preventDefault();
-    if (!formData.categoryId) {
-      alert('Please select a valid category.');
-      return;
-    }
+    if (!formData.name.trim()) return;
+    setSaving(true);
     try {
-      setActionSuccess(null);
       const payload = {
         name: formData.name,
         description: formData.description,
-        basePrice: parseFloat(formData.basePrice),
-        durationInMinutes: parseInt(formData.durationInMinutes, 10),
-        imageUrl: formData.imageUrl,
-        active: formData.active,
+        basePrice: parseFloat(formData.basePrice) || 499,
+        durationMinutes: parseInt(formData.durationMinutes, 10) || 60,
+        active: true,
       };
 
-      if (editId) {
-        await adminService.updateService(editId, payload);
-        setActionSuccess(`Service '${formData.name}' updated successfully.`);
+      if (editingService) {
+        await adminService.updateService(editingService.id, payload);
       } else {
         await adminService.createService(formData.categoryId, payload);
-        setActionSuccess(`New Service '${formData.name}' created.`);
       }
-      setShowModal(false);
-      fetchData();
+      setModalOpen(false);
+      await fetchData();
     } catch (err) {
-      alert('Operation failed: ' + (err.response?.data?.message || err.message));
+      alert(err.message || 'Failed to save service');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete service '${name}' (ID #${id})?`)) return;
+  const handleToggleDeactivate = async (id) => {
     try {
-      setActionSuccess(null);
-      await adminService.deleteService(id);
-      setActionSuccess(`Service '${name}' deleted successfully.`);
-      fetchData();
+      await adminService.deactivateService(id);
+      await fetchData();
     } catch (err) {
-      alert('Delete failed: ' + (err.response?.data?.message || err.message));
+      alert(err.message || 'Failed to toggle service status');
     }
   };
+
+  const filteredServices = services.filter((s) => {
+    const q = searchQuery.toLowerCase();
+    return !q || s.name.toLowerCase().includes(q) || (s.categoryName || '').toLowerCase().includes(q);
+  });
 
   return (
-    <div className="admin-services-page">
+    <div>
       <DashboardHeader
         title="Service Catalog Management"
-        subtitle="Manage service items, base pricing, duration, and category mappings."
+        subtitle="Configure standard marketplace offerings, duration estimates, and base pricing."
+        actions={
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={handleOpenAddModal}
+          >
+            <Plus size={14} />
+            <span>Add Service</span>
+          </button>
+        }
       />
 
       <div className="dashboard-content">
-        <div className="container" style={{ maxWidth: '1200px' }}>
-          {actionSuccess && (
-            <div className="alert alert-success mb-4 flex items-center gap-2" role="alert">
-              <CheckCircle2 size={18} />
-              <span>{actionSuccess}</span>
-            </div>
-          )}
+        
+        {/* Controls */}
+        <div className="card mb-6" style={{ padding: '1rem', backgroundColor: 'var(--white)' }}>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <span className="text-xs text-muted font-bold uppercase tracking-wider">
+              {filteredServices.length} Active Catalog Services
+            </span>
 
-          {error && (
-            <div className="alert alert-danger mb-4 flex items-center gap-2" role="alert">
-              <AlertCircle size={18} />
-              <span>{error}</span>
+            <div style={{ position: 'relative', width: '260px' }}>
+              <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neutral-400)' }} />
+              <input
+                type="text"
+                className="form-control"
+                style={{ paddingLeft: '32px', fontSize: '13px' }}
+                placeholder="Search services..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          )}
-
-          {/* Action Bar */}
-          <div className="card p-3 mb-4 flex items-center justify-between">
-            <h4 style={{ margin: 0, fontWeight: 700 }}>Service Catalog Items</h4>
-            <button className="btn btn-primary flex items-center gap-1" onClick={handleOpenCreate}>
-              <Plus size={16} />
-              <span>Add New Service</span>
-            </button>
           </div>
+        </div>
 
-          {/* Services Table */}
-          <div className="card p-0 overflow-hidden">
-            {loading ? (
-              <div className="p-5 text-center">
-                <div className="spinner-border text-primary mb-2" role="status" />
-                <p className="text-muted">Loading service catalog from backend...</p>
-              </div>
-            ) : services.length === 0 ? (
-              <div className="p-5 text-center text-muted">No services found in database.</div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-hover mb-0" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead style={{ backgroundColor: 'var(--neutral-100)', borderBottom: '1px solid var(--neutral-200)' }}>
-                    <tr>
-                      <th style={{ padding: '0.75rem 1rem' }}>ID</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Service Name</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Category</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Base Price</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Est. Duration</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {services.map((s) => (
-                      <tr key={s.id} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>#{s.id}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <div className="font-bold text-neutral-900">{sanitizeServiceName(s.name)}</div>
-                          <div className="text-xs text-muted text-truncate" style={{ maxWidth: '280px' }}>
-                            {sanitizeServiceDescription(s.description)}
-                          </div>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600 }}>
-                          {s.categoryName || `Category #${s.categoryId}`}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--primary-700)' }}>
-                          {formatCurrency(s.basePrice)}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>
-                          <span className="flex items-center gap-1 text-muted">
-                            <Clock size={12} />
-                            <span>{s.durationInMinutes} mins</span>
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              backgroundColor: s.active !== false ? '#dcfce7' : '#fee2e2',
-                              color: s.active !== false ? '#166534' : '#991b1b',
-                            }}
+        {/* Services Table */}
+        {loading ? (
+          <LoadingSpinner message="Loading service offerings..." />
+        ) : filteredServices.length === 0 ? (
+          <EmptyState
+            icon={ClipboardList}
+            title="No services found"
+            description="Create your first standard service offering."
+            action={
+              <Button variant="primary" onClick={handleOpenAddModal}>
+                <Plus size={14} />
+                <span>Add Service</span>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--white)' }}>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Service Name</th>
+                    <th>Category</th>
+                    <th>Base Visit Price</th>
+                    <th>Estimated Duration</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredServices.map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        <strong className="text-sm block" style={{ color: 'var(--neutral-900)' }}>
+                          {s.name}
+                        </strong>
+                        <span className="text-2xs text-muted font-mono">ID: {s.id}</span>
+                      </td>
+                      <td>
+                        <span className="badge badge-confirmed" style={{ fontSize: '11px' }}>
+                          {s.categoryName || 'General'}
+                        </span>
+                      </td>
+                      <td>
+                        <strong className="text-sm text-primary">
+                          {formatCurrency(s.basePrice || s.price || 499)}
+                        </strong>
+                      </td>
+                      <td>
+                        <span className="text-xs">{s.durationMinutes || 60} mins</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${s.active !== false ? 'badge-verified' : 'badge-cancelled'}`} style={{ fontSize: '10px' }}>
+                          {s.active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-secondary"
+                            style={{ padding: '4px 8px' }}
+                            onClick={() => handleOpenEditModal(s)}
+                            title="Edit Service"
                           >
-                            {s.active !== false ? 'ACTIVE' : 'INACTIVE'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                          <div className="flex items-center justify-end gap-2">
-                            <button className="btn btn-sm btn-secondary flex items-center gap-1" onClick={() => handleOpenEdit(s)}>
-                              <Edit2 size={12} />
-                              <span>Edit</span>
-                            </button>
-                            <button className="btn btn-sm btn-secondary flex items-center gap-1" style={{ color: 'var(--danger-600)' }} onClick={() => handleDelete(s.id, s.name)}>
-                              <Trash2 size={12} />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            style={{ padding: '4px 8px' }}
+                            onClick={() => handleToggleDeactivate(s.id)}
+                            title="Toggle Status"
+                          >
+                            <Power size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Add/Edit Modal */}
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title={editingService ? 'Edit Service Offering' : 'Add New Service Offering'}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" loading={saving} onClick={handleSaveService}>
+                {editingService ? 'Save Service' : 'Create Service'}
+              </Button>
+            </>
+          }
+        >
+          <form onSubmit={handleSaveService}>
+            {!editingService && (
+              <div className="form-group mb-3">
+                <label className="form-label font-bold">Category</label>
+                <select
+                  className="form-control"
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
             )}
-          </div>
 
-          {/* Modal Overlay */}
-          {showModal && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
-              }}
-            >
-              <div className="card p-4" style={{ width: '100%', maxWidth: '540px', backgroundColor: '#fff' }}>
-                <h4 style={{ fontWeight: 700, marginBottom: '1rem' }}>
-                  {editId ? `Edit Service #${editId}` : 'Create New Catalog Service'}
-                </h4>
-                <form onSubmit={handleSubmit}>
-                  {!editId && (
-                    <div className="form-group mb-3">
-                      <label className="form-label font-bold text-sm">Parent Category</label>
-                      <select
-                        className="form-control"
-                        required
-                        value={formData.categoryId}
-                        onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                      >
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} (ID #{c.id})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+            <Input
+              label="Service Name"
+              placeholder="e.g. Switch & Socket Replacement"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
 
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Service Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="Base Diagnostic Fee (₹)"
+                type="number"
+                value={formData.basePrice}
+                onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
+                required
+              />
 
-                  <div className="grid grid-cols-2 gap-3 mb-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                    <div>
-                      <label className="form-label font-bold text-sm">Base Price (₹)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        required
-                        min="0"
-                        value={formData.basePrice}
-                        onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label font-bold text-sm">Est. Duration (Mins)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        required
-                        min="15"
-                        value={formData.durationInMinutes}
-                        onChange={(e) => setFormData({ ...formData, durationInMinutes: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Image URL (Optional)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label font-bold text-sm">Description</label>
-                    <textarea
-                      className="form-control"
-                      rows="3"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group mb-4 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="activeServiceCheck"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    />
-                    <label htmlFor="activeServiceCheck" className="form-label font-bold text-sm mb-0">
-                      Active Service
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      {editId ? 'Save Changes' : 'Create Service'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+              <Input
+                label="Estimated Duration (Minutes)"
+                type="number"
+                value={formData.durationMinutes}
+                onChange={(e) => setFormData({ ...formData, durationMinutes: e.target.value })}
+                required
+              />
             </div>
-          )}
-        </div>
+
+            <div className="form-group mb-0">
+              <label className="form-label">Service Description</label>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder="Scope of work and inspection details..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+          </form>
+        </Modal>
+
       </div>
     </div>
   );
